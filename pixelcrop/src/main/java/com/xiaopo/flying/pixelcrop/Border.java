@@ -23,11 +23,21 @@ class Border {
     Line lineRight;
     Line lineBottom;
 
+    PointF leftTop;
+    PointF leftBottom;
+    PointF rightTop;
+    PointF rightBottom;
+
     Border(Border src) {
         lineLeft = src.lineLeft;
         lineTop = src.lineTop;
         lineRight = src.lineRight;
         lineBottom = src.lineBottom;
+
+        leftTop = src.lineLeft.start;
+        leftBottom = src.lineLeft.end;
+        rightTop = src.lineRight.start;
+        rightBottom = src.lineRight.end;
     }
 
     Border(RectF baseRect) {
@@ -35,8 +45,6 @@ class Border {
     }
 
     private void setBaseRect(RectF baseRect) {
-        float width = baseRect.width();
-        float height = baseRect.height();
 
         PointF one = new PointF(baseRect.left, baseRect.top);
         PointF two = new PointF(baseRect.right, baseRect.top);
@@ -47,6 +55,11 @@ class Border {
         lineTop = new Line(one, two);
         lineRight = new Line(two, four);
         lineBottom = new Line(three, four);
+
+        leftTop = one;
+        leftBottom = three;
+        rightTop = two;
+        rightBottom = four;
     }
 
     float width() {
@@ -96,6 +109,15 @@ class Border {
 
     boolean contains(Line line) {
         return lineLeft == line || lineTop == line || lineRight == line || lineBottom == line;
+    }
+
+    PointF[] getCornerPoints() {
+        return new PointF[]{
+                lineTop.start,
+                lineTop.end,
+                lineBottom.end,
+                lineBottom.start
+        };
     }
 
 

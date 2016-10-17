@@ -16,10 +16,9 @@ public class CropWrapper {
     private Matrix mMatrix;
 
     private Rect mRealBound;
+    private RectF mMappedBound = new RectF();
 
-    private float mZoom = 1f;
-
-    private boolean mCanZoom;
+    private float mRotate;
 
     public static final int LEFT = 1;
     public static final int TOP = 1 << 1;
@@ -52,19 +51,19 @@ public class CropWrapper {
 
     public float[] getBoundPoints() {
 //        if (!mIsFlipped) {
-//            return new float[]{
-//                    0f, 0f,
-//                    getWidth(), 0f,
-//                    0f, getHeight(),
-//                    getWidth(), getHeight()
-//            };
-//        } else {
         return new float[]{
-                getWidth(), 0f,
                 0f, 0f,
+                getWidth(), 0f,
                 getWidth(), getHeight(),
                 0f, getHeight()
         };
+//        } else {
+//        return new float[]{
+//                getWidth(), 0f,
+//                0f, 0f,
+//                getWidth(), getHeight(),
+//                0f, getHeight()
+//        };
 //        }
     }
 
@@ -72,6 +71,18 @@ public class CropWrapper {
         float[] dst = new float[8];
         mMatrix.mapPoints(dst, getBoundPoints());
         return dst;
+    }
+
+    public PointF[] getMappedCornerPoints() {
+        float[] dst = new float[8];
+        mMatrix.mapPoints(dst, getBoundPoints());
+        return new PointF[]{
+                new PointF(dst[0], dst[1]),
+                new PointF(dst[2], dst[3]),
+                new PointF(dst[4], dst[5]),
+                new PointF(dst[6], dst[7])
+
+        };
     }
 
     public float[] getMappedPoints(float[] src) {
@@ -86,9 +97,8 @@ public class CropWrapper {
     }
 
     public RectF getMappedBound() {
-        RectF dst = new RectF();
-        mMatrix.mapRect(dst, getBound());
-        return dst;
+        mMatrix.mapRect(mMappedBound, getBound());
+        return mMappedBound;
     }
 
     public PointF getCenterPoint() {
@@ -103,6 +113,15 @@ public class CropWrapper {
         });
         return new PointF(dst[0], dst[1]);
     }
+
+    public float getMappedWidth() {
+        return getMappedBound().width();
+    }
+
+    public float getMappedHeight() {
+        return getMappedBound().height();
+    }
+
 
     public int getWidth() {
         return mDrawable.getIntrinsicWidth();
@@ -160,11 +179,24 @@ public class CropWrapper {
         return (mCanMoveDirection & BOTTOM) != 0;
     }
 
-    public float getZoom() {
-        return mZoom;
+    public float getTranslateX() {
+        return getMappedCenterPoint().x - getCenterPoint().x;
     }
 
-    public void setZoom(float zoom) {
-        mZoom = zoom;
+
+    public float getTranslateY() {
+        return getMappedCenterPoint().y - getCenterPoint().y;
+    }
+
+    public float getScaleFactor() {
+        return getMappedWidth() / getWidth();
+    }
+
+    public float getRotate() {
+        return mRotate;
+    }
+
+    public void setRotate(float rotate) {
+        mRotate = rotate;
     }
 }

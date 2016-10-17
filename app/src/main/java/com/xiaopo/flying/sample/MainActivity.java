@@ -19,11 +19,12 @@ public class MainActivity extends AppCompatActivity {
         pixelCropView.setCropBitmap(bitmap);
 
         SeekBar seekBar = (SeekBar) findViewById(R.id.seekbar);
-        seekBar.setMax(45);
+        seekBar.setMax(90);
+        seekBar.setProgress(45);
         seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
             @Override
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                pixelCropView.rotate(progress);
+                pixelCropView.rotate(progress - 45);
             }
 
             @Override
