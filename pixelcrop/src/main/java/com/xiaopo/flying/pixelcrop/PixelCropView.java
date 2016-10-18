@@ -30,47 +30,29 @@ import static java.lang.Math.toRadians;
  */
 public class PixelCropView extends View {
     private static final String TAG = "PixelCropView";
-
-    public enum ActionMode {
-        NONE,
-        DRAG,
-        ZOOM,
-    }
-
     private CropWrapper mCropWrapper;
     private int mBorderOffset = 50;
-
     private Paint mBorderPaint;
-
     private Border mCropBorder;
-
     private float mDownX;
     private float mDownY;
     private float mOldDistance;
-
     //缩放点
     private PointF mScalePoint;
-
     private Matrix mPreMatrix;
     private Matrix mPreSizeMatrix;
-
     //触摸事件开始时的缩放比
     private float mPreZoom;
-
     private ActionMode mCurrentMode;
-
-
     private boolean mIsRotateState;
     //不同旋转角度下的最小缩放比
     private float mMinZoom;
-
     //Temp Var
     private double mTempAlpha;
     private float mTempScale;
     private float mDiagonal;
     private float mCropBorderWidth;
     private float mCropBorderHeight;
-
     public PixelCropView(Context context) {
         super(context);
     }
@@ -139,7 +121,7 @@ public class PixelCropView extends View {
             float scaleX = mCropBorder.width() / mCropWrapper.getWidth();
             float scaleY = mCropBorder.height() / mCropWrapper.getHeight();
 
-            Log.d(TAG, "onSizeChanged: minZoom->" + mMinZoom);
+            mMinZoom = scaleX;
 
             mCropWrapper.getMatrix()
                     .postScale(scaleX, scaleY, mCropWrapper.getMappedCenterPoint().x, mCropWrapper.getMappedCenterPoint().y);
@@ -231,6 +213,18 @@ public class PixelCropView extends View {
                     case NONE:
                         break;
                     case DRAG:
+                        System.out.println("leftTop");
+                        mCropWrapper.isInBorder(mCropBorder.leftTop);
+
+                        System.out.println("rightTop");
+                        mCropWrapper.isInBorder(mCropBorder.rightTop);
+
+                        System.out.println("leftBottom");
+                        mCropWrapper.isInBorder(mCropBorder.leftBottom);
+
+                        System.out.println("rightBottom");
+                        mCropWrapper.isInBorder(mCropBorder.rightBottom);
+
                         break;
                     case ZOOM:
 
@@ -247,31 +241,39 @@ public class PixelCropView extends View {
     }
 
     private void handleZoomEvent(MotionEvent event) {
-//        Log.d(TAG, "handleZoomEvent: minZoom->" + mMinZoom);
         if (mCropWrapper != null) {
             float newDistance = calculateDistance(event);
 
             float scale = newDistance / mOldDistance;
-//            Log.d(TAG, "handleZoomEvent: mPreZoom*scale->" + (mPreZoom * scale));
-//            Log.d(TAG, "handleZoomEvent: mPreZoom->" + mPreZoom);
+
+//            checkScalePoint();
+
             //TODO 缩放中心的问题
             if (mPreZoom * scale <= mMinZoom) {
-//                Log.d(TAG, "handleZoomEvent: here");
                 mCropWrapper.getMatrix().set(mPreMatrix);
                 mCropWrapper.getMatrix().postScale(mMinZoom / mCropWrapper.getScaleFactor(), mMinZoom / mCropWrapper.getScaleFactor(),
                         mCropBorder.centerX(), mCropBorder.centerY());
+//                mCropWrapper.getMatrix().postScale(mMinZoom / mCropWrapper.getScaleFactor(), mMinZoom / mCropWrapper.getScaleFactor(),
+//                        mScalePoint.x,mScalePoint.y);
                 return;
             }
 
             mCropWrapper.getMatrix().set(mPreMatrix);
             mCropWrapper.getMatrix().postScale(scale, scale,
                     mCropBorder.centerX(), mCropBorder.centerY());
+//            mCropWrapper.getMatrix().postScale(scale,scale,
+//                    mScalePoint.x,mScalePoint.y);
 
         }
     }
 
+//    private void checkScalePoint() {
+//        if ()
+//    }
+
 
     private void handleDragEvent(MotionEvent event) {
+
         if (mCropWrapper != null) {
             mCropWrapper.getMatrix().set(mPreMatrix);
             mCropWrapper.getMatrix().postTranslate(event.getX() - mDownX, event.getY() - mDownY);
@@ -305,12 +307,10 @@ public class PixelCropView extends View {
             if (mCropBorderWidth > mCropBorderHeight) {
                 mTempAlpha = atan(mCropBorderHeight / mCropBorderWidth);
                 mTempScale = (float) (mDiagonal * sin(toRadians(abs(degrees)) + mTempAlpha) / mCropBorderHeight);
-//                Log.d(TAG, "rotate: scale->" + scale);
                 float hh = mTempScale * mCropBorderHeight;
                 float ww = mTempScale * mCropBorderWidth;
                 double temp = (hh * sin(toRadians(abs(degrees))) + ww * cos(toRadians(abs(degrees))));
                 mMinZoom = (float) (temp / mCropWrapper.getWidth());
-//                Log.d(TAG, "rotate: temp " + (temp / mCropWrapper.getWidth()));
             } else {
                 mTempAlpha = atan(mCropBorderWidth / mCropBorderHeight);
                 mTempScale = (float) (mDiagonal * sin(toRadians(abs(degrees)) + mTempAlpha) / mCropBorderWidth);
@@ -319,11 +319,18 @@ public class PixelCropView extends View {
                 float ww = mTempScale * mCropBorderWidth;
                 double temp = (ww * sin(toRadians(abs(degrees))) + hh * cos(toRadians(abs(degrees))));
                 mMinZoom = (float) (temp / mCropWrapper.getHeight());
-//                Log.d(TAG, "rotate: temp " + (temp / mCropWrapper.getHeight()));
             }
 
-            Log.d(TAG, "rotate: minZoom->" + mMinZoom);
         }
+
+//        for (PointF pointF:mCropBorder.getCornerPoints()){
+//            Log.d(TAG, "rotate: borderCorner->"+pointF.toString());
+//        }
+//
+//        for (float f:mCropWrapper.getMappedCornerPoints()){
+//            Log.d(TAG, "rotate: wrapperCorner->"+f);
+//        }
+
 
     }
 
@@ -355,7 +362,6 @@ public class PixelCropView extends View {
         invalidate();
     }
 
-
     private PointF calculateMidPoint(MotionEvent event) {
         if (event == null || event.getPointerCount() < 2) return new PointF();
         float x = (event.getX(0) + event.getX(1)) / 2;
@@ -382,5 +388,11 @@ public class PixelCropView extends View {
     public void setRotateState(boolean rotateState) {
         mIsRotateState = rotateState;
         invalidate();
+    }
+
+    public enum ActionMode {
+        NONE,
+        DRAG,
+        ZOOM,
     }
 }

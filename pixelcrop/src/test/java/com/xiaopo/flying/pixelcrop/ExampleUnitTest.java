@@ -19,11 +19,13 @@ public class ExampleUnitTest {
 
     @Test
     public void testUtil(){
-        PointF A = new FakePointF(100,100);
-        PointF B = new FakePointF(100,300);
-        PointF C = new FakePointF(300,100);
+        PointF A = new FakePointF(50,634);
+        PointF B = new FakePointF(824.26416f,150.2449f);
+        PointF C = new FakePointF(36.116585f,26.824234f);
         double result = CropUtil.calculatePointToLine(A,B,C);
         System.out.println(result);
+        System.out.println(Math.round(result));
+        System.out.println(Math.round(-0.51));
     }
 
     public static class FakePointF extends PointF {

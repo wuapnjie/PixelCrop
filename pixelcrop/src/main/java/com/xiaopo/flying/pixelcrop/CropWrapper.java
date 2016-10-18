@@ -6,6 +6,7 @@ import android.graphics.PointF;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.drawable.Drawable;
+import android.util.Log;
 
 /**
  * Created by snowbean on 16-10-14.
@@ -17,6 +18,8 @@ public class CropWrapper {
 
     private Rect mRealBound;
     private RectF mMappedBound = new RectF();
+    private float[] mMappedCornerPointsSides = new float[8];
+    private PointF[] mMappedCornerPoints;
 
     private float mRotate;
 
@@ -34,6 +37,13 @@ public class CropWrapper {
         mDrawable = drawable;
         mMatrix = matrix;
         mRealBound = new Rect(0, 0, getWidth(), getHeight());
+
+        mMappedCornerPoints = new PointF[]{
+                new PointF(0,0),
+                new PointF(getWidth(),0),
+                new PointF(getWidth(),getHeight()),
+                new PointF(0,getHeight())
+        };
     }
 
     public void draw(Canvas canvas, int alpha) {
@@ -74,15 +84,12 @@ public class CropWrapper {
     }
 
     public PointF[] getMappedCornerPoints() {
-        float[] dst = new float[8];
-        mMatrix.mapPoints(dst, getBoundPoints());
-        return new PointF[]{
-                new PointF(dst[0], dst[1]),
-                new PointF(dst[2], dst[3]),
-                new PointF(dst[4], dst[5]),
-                new PointF(dst[6], dst[7])
-
-        };
+        mMatrix.mapPoints(mMappedCornerPointsSides, getBoundPoints());
+        mMappedCornerPoints[0].set(mMappedCornerPointsSides[0], mMappedCornerPointsSides[1]);
+        mMappedCornerPoints[1].set(mMappedCornerPointsSides[2], mMappedCornerPointsSides[3]);
+        mMappedCornerPoints[2].set(mMappedCornerPointsSides[4], mMappedCornerPointsSides[5]);
+        mMappedCornerPoints[3].set(mMappedCornerPointsSides[6], mMappedCornerPointsSides[7]);
+        return mMappedCornerPoints;
     }
 
     public float[] getMappedPoints(float[] src) {
@@ -198,5 +205,27 @@ public class CropWrapper {
 
     public void setRotate(float rotate) {
         mRotate = rotate;
+    }
+
+    public boolean isInBorder(PointF p) {
+        getMappedCornerPoints();
+
+        Log.d(TAG, "isInBorder: p-->"+p.toString());
+
+        for (PointF pointF:mMappedCornerPoints){
+            Log.d(TAG, "borderCorner->"+pointF.toString());
+        }
+
+        System.out.println(CropUtil.calculatePointToLine(p, mMappedCornerPoints[0], mMappedCornerPoints[1]));
+        System.out.println(CropUtil.calculatePointToLine(p, mMappedCornerPoints[1], mMappedCornerPoints[2]));
+        System.out.println(CropUtil.calculatePointToLine(p, mMappedCornerPoints[2], mMappedCornerPoints[3]));
+        System.out.println(CropUtil.calculatePointToLine(p, mMappedCornerPoints[3], mMappedCornerPoints[0]));
+        System.out.println("<------------->");
+
+//        if (CropUtil.calculatePointToLine(p, mMappedCornerPoints[0], mMappedCornerPoints[1]) <= 1) {
+//
+//        }
+
+        return false;
     }
 }

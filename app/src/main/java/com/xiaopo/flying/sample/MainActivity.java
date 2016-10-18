@@ -15,7 +15,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         final PixelCropView pixelCropView = (PixelCropView) findViewById(R.id.pixel_crop_view);
-        Bitmap bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.demo);
+        Bitmap bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.demo2);
         pixelCropView.setCropBitmap(bitmap);
 
         SeekBar seekBar = (SeekBar) findViewById(R.id.seekbar);

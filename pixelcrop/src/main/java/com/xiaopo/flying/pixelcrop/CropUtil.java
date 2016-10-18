@@ -8,14 +8,14 @@ import android.graphics.PointF;
 class CropUtil {
     private static final String TAG = "CropUtil";
 
-    //计算点A到BC之间的距离
-    public static double calculatePointToLine(PointF A, PointF B, PointF C) {
-        if (B.y==C.y){
-            return Math.abs(A.y - B.y);
+    //计算点A到BC之间的距离,进行四舍五入
+    public static long calculatePointToLine(PointF A, PointF B, PointF C) {
+        if (B.y == C.y) {
+            return Math.round(Math.abs(A.y - B.y));
         }
 
-        if (B.x==C.x){
-            return Math.abs(A.x - B.x);
+        if (B.x == C.x) {
+            return Math.round(Math.abs(A.x - B.x));
         }
 
         float k = (B.y - C.y) / (B.x - C.x);
@@ -26,7 +26,7 @@ class CropUtil {
         double x = (c - b) * k / (Math.pow(k, 2) + 1);
         double y = k * x + b;
 
-        return Math.sqrt(Math.pow(A.x - x, 2)+Math.pow(A.y - y, 2));
+        return Math.round(Math.sqrt(Math.pow(A.x - x, 2) + Math.pow(A.y - y, 2)));
     }
 
 
