@@ -1,6 +1,5 @@
 package com.xiaopo.flying.pixelcrop;
 
-import android.annotation.TargetApi;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
@@ -10,49 +9,56 @@ import android.graphics.Paint;
 import android.graphics.PointF;
 import android.graphics.RectF;
 import android.graphics.drawable.BitmapDrawable;
-import android.os.Build;
 import android.support.v4.view.MotionEventCompat;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 
-import static java.lang.Math.abs;
-import static java.lang.Math.atan;
-import static java.lang.Math.cos;
-import static java.lang.Math.pow;
-import static java.lang.Math.sin;
 import static java.lang.Math.sqrt;
-import static java.lang.Math.toRadians;
 
 /**
  * Created by snowbean on 16-10-14.
  */
 public class PixelCropView extends View {
     private static final String TAG = "PixelCropView";
+
+    public enum ActionMode {
+        NONE,
+        DRAG,
+        ZOOM,
+    }
+
     private CropWrapper mCropWrapper;
     private int mBorderOffset = 50;
     private Paint mBorderPaint;
     private Border mCropBorder;
+
     private float mDownX;
     private float mDownY;
     private float mOldDistance;
+
     //缩放点
     private PointF mScalePoint;
     private Matrix mPreMatrix;
     private Matrix mPreSizeMatrix;
+    private Matrix mTempMatrix;
+
     //触摸事件开始时的缩放比
     private float mPreZoom;
     private ActionMode mCurrentMode;
     private boolean mIsRotateState;
+    private float mRotateDegree;
     //不同旋转角度下的最小缩放比
-    private float mMinZoom;
+    private float mMinScale;
+
     //Temp Var
     private double mTempAlpha;
     private float mTempScale;
     private float mDiagonal;
     private float mCropBorderWidth;
     private float mCropBorderHeight;
+
     public PixelCropView(Context context) {
         super(context);
     }
@@ -66,17 +72,13 @@ public class PixelCropView extends View {
 
         mPreMatrix = new Matrix();
         mPreSizeMatrix = new Matrix();
+        mTempMatrix = new Matrix();
 
         mScalePoint = new PointF();
     }
 
     public PixelCropView(Context context, AttributeSet attrs, int defStyleAttr) {
         super(context, attrs, defStyleAttr);
-    }
-
-    @TargetApi(Build.VERSION_CODES.LOLLIPOP)
-    public PixelCropView(Context context, AttributeSet attrs, int defStyleAttr, int defStyleRes) {
-        super(context, attrs, defStyleAttr, defStyleRes);
     }
 
     @Override
@@ -87,7 +89,20 @@ public class PixelCropView extends View {
                 w - mBorderOffset,
                 w - mBorderOffset));
 
-        //根据图片的长宽比确定剪裁边框的大小，并使图片移动缩放至剪裁框内
+        if (mCropWrapper != null) {
+            setUpDefaultCropBorder(w, h);
+
+            //使图片移动缩放至剪裁框内
+            setWrapperToFitBorder();
+
+            mPreMatrix.set(mCropWrapper.getMatrix());
+            mPreSizeMatrix.set(mCropWrapper.getMatrix());
+        }
+
+    }
+
+    //根据图片的长宽比确定剪裁边框的大小
+    private void setUpDefaultCropBorder(int w, int h) {
         if (mCropWrapper != null) {
             int width = mCropWrapper.getWidth();
             int height = mCropWrapper.getHeight();
@@ -111,29 +126,9 @@ public class PixelCropView extends View {
                         w - mBorderOffset
                 ));
             }
-
-            int offsetX = getWidth() / 2 - mCropWrapper.getWidth() / 2;
-            int offsetY = getWidth() / 2 - mCropWrapper.getHeight() / 2;
-
-            mCropWrapper.getMatrix()
-                    .setTranslate(offsetX, offsetY);
-
-            float scaleX = mCropBorder.width() / mCropWrapper.getWidth();
-            float scaleY = mCropBorder.height() / mCropWrapper.getHeight();
-
-            mMinZoom = scaleX;
-
-            mCropWrapper.getMatrix()
-                    .postScale(scaleX, scaleY, mCropWrapper.getMappedCenterPoint().x, mCropWrapper.getMappedCenterPoint().y);
-
-            mPreMatrix.set(mCropWrapper.getMatrix());
-            mPreSizeMatrix.set(mCropWrapper.getMatrix());
-
-
-            invalidate();
         }
-
     }
+
 
     @Override
     protected void onDraw(Canvas canvas) {
@@ -156,6 +151,7 @@ public class PixelCropView extends View {
             }
             mBorderPaint.setStrokeWidth(3);
         }
+
 
     }
 
@@ -192,7 +188,7 @@ public class PixelCropView extends View {
                     case NONE:
                         break;
                     case DRAG:
-//                        handleDragEvent(event);
+                        handleDragEvent(event);
                         break;
                     case ZOOM:
                         handleZoomEvent(event);
@@ -213,17 +209,6 @@ public class PixelCropView extends View {
                     case NONE:
                         break;
                     case DRAG:
-                        System.out.println("leftTop");
-                        mCropWrapper.isInBorder(mCropBorder.leftTop);
-
-                        System.out.println("rightTop");
-                        mCropWrapper.isInBorder(mCropBorder.rightTop);
-
-                        System.out.println("leftBottom");
-                        mCropWrapper.isInBorder(mCropBorder.leftBottom);
-
-                        System.out.println("rightBottom");
-                        mCropWrapper.isInBorder(mCropBorder.rightBottom);
 
                         break;
                     case ZOOM:
@@ -233,6 +218,16 @@ public class PixelCropView extends View {
 
                 mCurrentMode = ActionMode.NONE;
                 invalidate();
+
+                mPreMatrix.set(mCropWrapper.getMatrix());
+
+                final float[] imageIndents = CropUtil.calculateImageIndents(mCropWrapper,mCropBorder,mRotateDegree);
+                float deltaX = -(imageIndents[0] + imageIndents[2]);
+                float deltaY = -(imageIndents[1] + imageIndents[3]);
+                Log.d(TAG, "onTouchEvent: deltaX->" + deltaX + ",deltaY->" + deltaY);
+
+                mCropWrapper.getMatrix().set(mPreMatrix);
+                mCropWrapper.getMatrix().postTranslate(deltaX, deltaY);
 
                 break;
         }
@@ -246,44 +241,49 @@ public class PixelCropView extends View {
 
             float scale = newDistance / mOldDistance;
 
-//            checkScalePoint();
-
             //TODO 缩放中心的问题
-            if (mPreZoom * scale <= mMinZoom) {
-                mCropWrapper.getMatrix().set(mPreMatrix);
-                mCropWrapper.getMatrix().postScale(mMinZoom / mCropWrapper.getScaleFactor(), mMinZoom / mCropWrapper.getScaleFactor(),
-                        mCropBorder.centerX(), mCropBorder.centerY());
-//                mCropWrapper.getMatrix().postScale(mMinZoom / mCropWrapper.getScaleFactor(), mMinZoom / mCropWrapper.getScaleFactor(),
-//                        mScalePoint.x,mScalePoint.y);
+            if (mPreZoom * scale <= mMinScale) {
+                postScale(mMinScale / mCropWrapper.getScaleFactor(),
+                        mMinScale / mCropWrapper.getScaleFactor(),
+                        mCropBorder.centerX(),
+                        mCropBorder.centerY(),
+                        null);
                 return;
             }
 
-            mCropWrapper.getMatrix().set(mPreMatrix);
-            mCropWrapper.getMatrix().postScale(scale, scale,
-                    mCropBorder.centerX(), mCropBorder.centerY());
-//            mCropWrapper.getMatrix().postScale(scale,scale,
-//                    mScalePoint.x,mScalePoint.y);
-
+            postScale(scale,
+                    scale,
+                    mCropBorder.centerX(),
+                    mCropBorder.centerY(),
+                    mPreMatrix);
         }
     }
-
-//    private void checkScalePoint() {
-//        if ()
-//    }
 
 
     private void handleDragEvent(MotionEvent event) {
+        postTranslate(event.getX() - mDownX,
+                event.getY() - mDownY,
+                mPreMatrix);
 
-        if (mCropWrapper != null) {
-            mCropWrapper.getMatrix().set(mPreMatrix);
-            mCropWrapper.getMatrix().postTranslate(event.getX() - mDownX, event.getY() - mDownY);
+        if (!isImageContainsBorder()) {
+            final float[] imageIndents = CropUtil.calculateImageIndents(mCropWrapper,mCropBorder,mRotateDegree);
+            float deltaX = -(imageIndents[0] + imageIndents[2]);
+            float deltaY = -(imageIndents[1] + imageIndents[3]);
+            Log.d(TAG, "onTouchEvent: deltaX->" + deltaX + ",deltaY->" + deltaY);
+
+            postTranslate(event.getX() - mDownX + deltaX,
+                    event.getY() - mDownY + deltaY,
+                    mPreMatrix);
         }
     }
 
+    private boolean isImageContainsBorder() {
+        return CropUtil.judgeIsImageContainsBorder(mCropWrapper,mCropBorder,mRotateDegree);
+    }
 
     //TODO
     public void rotate(int degrees) {
-        mCropWrapper.setRotate(degrees);
+        mRotateDegree = degrees;
 
         if (degrees > 0) {
             for (float i = degrees - 1; i <= degrees; i += 0.1) {
@@ -295,69 +295,33 @@ public class PixelCropView extends View {
             }
         }
 
-        mMinZoom = mCropWrapper.getScaleFactor();
-
-        if (mCropBorder != null) {
-
-            mCropBorderWidth = mCropBorder.width();
-            mCropBorderHeight = mCropBorder.height();
-
-            mDiagonal = (float) sqrt(pow(mCropBorderWidth, 2) + pow(mCropBorderHeight, 2));
-
-            if (mCropBorderWidth > mCropBorderHeight) {
-                mTempAlpha = atan(mCropBorderHeight / mCropBorderWidth);
-                mTempScale = (float) (mDiagonal * sin(toRadians(abs(degrees)) + mTempAlpha) / mCropBorderHeight);
-                float hh = mTempScale * mCropBorderHeight;
-                float ww = mTempScale * mCropBorderWidth;
-                double temp = (hh * sin(toRadians(abs(degrees))) + ww * cos(toRadians(abs(degrees))));
-                mMinZoom = (float) (temp / mCropWrapper.getWidth());
-            } else {
-                mTempAlpha = atan(mCropBorderWidth / mCropBorderHeight);
-                mTempScale = (float) (mDiagonal * sin(toRadians(abs(degrees)) + mTempAlpha) / mCropBorderWidth);
-
-                float hh = mTempScale * mCropBorderHeight;
-                float ww = mTempScale * mCropBorderWidth;
-                double temp = (ww * sin(toRadians(abs(degrees))) + hh * cos(toRadians(abs(degrees))));
-                mMinZoom = (float) (temp / mCropWrapper.getHeight());
-            }
-
-        }
-
-//        for (PointF pointF:mCropBorder.getCornerPoints()){
-//            Log.d(TAG, "rotate: borderCorner->"+pointF.toString());
-//        }
-//
-//        for (float f:mCropWrapper.getMappedCornerPoints()){
-//            Log.d(TAG, "rotate: wrapperCorner->"+f);
-//        }
-
+        mMinScale = CropUtil.calculateMinScale(mCropWrapper, mCropBorder, degrees);
 
     }
+
 
     private void rotate(float degrees) {
         if (mCropWrapper == null) return;
 
         if (mCropBorder != null) {
-            mCropWrapper.getMatrix().set(mPreSizeMatrix);
-            mCropWrapper.getMatrix().postRotate(degrees, mCropBorder.centerX(), mCropBorder.centerY());
+
+            postRotate(degrees,
+                    mCropBorder.centerX(),
+                    mCropBorder.centerY(),
+                    mPreSizeMatrix);
 
             mCropBorderWidth = mCropBorder.width();
             mCropBorderHeight = mCropBorder.height();
 
-            mDiagonal = (float) sqrt(pow(mCropBorderWidth, 2) + pow(mCropBorderHeight, 2));
-
-            if (mCropBorderWidth > mCropBorderHeight) {
-                mTempAlpha = atan(mCropBorderHeight / mCropBorderWidth);
-                mTempScale = (float) (mDiagonal * sin(toRadians(abs(degrees)) + mTempAlpha) / mCropBorderHeight);
-            } else {
-                mTempAlpha = atan(mCropBorderWidth / mCropBorderHeight);
-                mTempScale = (float) (mDiagonal * sin(toRadians(abs(degrees)) + mTempAlpha) / mCropBorderWidth);
-            }
-
-            mCropWrapper.getMatrix().postScale(mTempScale, mTempScale, mCropBorder.centerX(), mCropBorder.centerY());
+            mTempScale = CropUtil.calculateRotateScale(mCropBorderWidth, mCropBorderHeight, degrees);
+            
+            postScale(mTempScale,
+                    mTempScale,
+                    mCropBorder.centerX(),
+                    mCropBorder.centerY(),
+                    null);
 
         }
-
 
         invalidate();
     }
@@ -381,6 +345,7 @@ public class PixelCropView extends View {
     public void setCropBitmap(Bitmap bitmap) {
         //TODO Matrix create
         mCropWrapper = new CropWrapper(new BitmapDrawable(getResources(), bitmap), new Matrix());
+        setWrapperToFitBorder();
 
         invalidate();
     }
@@ -390,9 +355,50 @@ public class PixelCropView extends View {
         invalidate();
     }
 
-    public enum ActionMode {
-        NONE,
-        DRAG,
-        ZOOM,
+
+    private void setWrapperToFitBorder() {
+        int offsetX = getWidth() / 2 - mCropWrapper.getWidth() / 2;
+        int offsetY = getWidth() / 2 - mCropWrapper.getHeight() / 2;
+
+        if (mCropWrapper != null) {
+            mCropWrapper.getMatrix()
+                    .setTranslate(offsetX, offsetY);
+        }
+
+        if (mCropBorder != null) {
+            float scaleX = mCropBorder.width() / mCropWrapper.getWidth();
+            float scaleY = mCropBorder.height() / mCropWrapper.getHeight();
+
+            mMinScale = scaleX;
+
+            mCropWrapper.getMatrix()
+                    .postScale(scaleX, scaleY, mCropWrapper.getMappedCenterPoint().x, mCropWrapper.getMappedCenterPoint().y);
+        }
+
+        invalidate();
+    }
+
+    private void postScale(float sx, float sy, float px, float py, Matrix preMatrix) {
+        if (mCropWrapper == null) return;
+        if (preMatrix != null) {
+            mCropWrapper.getMatrix().set(preMatrix);
+        }
+        mCropWrapper.getMatrix().postScale(sx, sy, px, py);
+    }
+
+    private void postTranslate(float x, float y, Matrix preMatrix) {
+        if (mCropWrapper == null) return;
+        if (preMatrix != null) {
+            mCropWrapper.getMatrix().set(preMatrix);
+        }
+        mCropWrapper.getMatrix().postTranslate(x, y);
+    }
+
+    private void postRotate(float rotateDegrees, float px, float py, Matrix preMatrix) {
+        if (mCropWrapper == null) return;
+        if (preMatrix != null) {
+            mCropWrapper.getMatrix().set(preMatrix);
+        }
+        mCropWrapper.getMatrix().postRotate(rotateDegrees, px, py);
     }
 }

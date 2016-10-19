@@ -28,6 +28,8 @@ class Border {
     PointF rightTop;
     PointF rightBottom;
 
+    float[] cornerPoints = new float[8];
+
     Border(Border src) {
         lineLeft = src.lineLeft;
         lineTop = src.lineTop;
@@ -38,6 +40,8 @@ class Border {
         leftBottom = src.lineLeft.end;
         rightTop = src.lineRight.start;
         rightBottom = src.lineRight.end;
+
+        cornerPoints = src.cornerPoints;
     }
 
     Border(RectF baseRect) {
@@ -60,6 +64,17 @@ class Border {
         leftBottom = three;
         rightTop = two;
         rightBottom = four;
+
+        cornerPoints[0] = one.x;
+        cornerPoints[1] = one.y;
+        cornerPoints[2] = two.x;
+        cornerPoints[3] = two.y;
+        cornerPoints[4] = three.x;
+        cornerPoints[5] = three.y;
+        cornerPoints[6] = four.x;
+        cornerPoints[7] = four.y;
+
+
     }
 
     float width() {
