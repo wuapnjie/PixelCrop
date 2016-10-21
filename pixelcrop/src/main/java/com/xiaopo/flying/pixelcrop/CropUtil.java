@@ -21,6 +21,7 @@ import static java.lang.Math.toRadians;
 class CropUtil {
     private static final String TAG = "CropUtil";
 
+    private static float[] sCorners = new float[8];
     private static float[] sMinZooms = new float[100];
     private static Matrix sTempMatrix = new Matrix();
 
@@ -162,12 +163,15 @@ class CropUtil {
     }
 
     private static float[] getCornersFromRect(RectF r) {
-        return new float[]{
-                r.left, r.top,
-                r.right, r.top,
-                r.right, r.bottom,
-                r.left, r.bottom
-        };
+        sCorners[0] = r.left;
+        sCorners[1] = r.top;
+        sCorners[2] = r.right;
+        sCorners[3] = r.top;
+        sCorners[4] = r.right;
+        sCorners[5] = r.bottom;
+        sCorners[6] = r.left;
+        sCorners[7] = r.bottom;
+        return sCorners;
     }
 
 }

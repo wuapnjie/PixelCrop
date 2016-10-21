@@ -28,6 +28,8 @@ class Border {
     PointF rightTop;
     PointF rightBottom;
 
+    private RectF mRect = new RectF();
+
     float[] cornerPoints = new float[8];
 
     Border(Border src) {
@@ -74,7 +76,6 @@ class Border {
         cornerPoints[6] = four.x;
         cornerPoints[7] = four.y;
 
-
     }
 
     float width() {
@@ -115,26 +116,16 @@ class Border {
     }
 
     RectF getRect() {
-        return new RectF(
-                left(),
-                top(),
-                right(),
-                bottom());
+        mRect.left = left();
+        mRect.top = top();
+        mRect.right = right();
+        mRect.bottom = bottom();
+        return mRect;
     }
 
     boolean contains(Line line) {
         return lineLeft == line || lineTop == line || lineRight == line || lineBottom == line;
     }
-
-    PointF[] getCornerPoints() {
-        return new PointF[]{
-                lineTop.start,
-                lineTop.end,
-                lineBottom.end,
-                lineBottom.start
-        };
-    }
-
 
     public void drawGrid(Canvas canvas, Paint paint, int row, int column) {
         for (int i = 1; i < row; i++) {

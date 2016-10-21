@@ -11,7 +11,6 @@ import android.graphics.RectF;
 import android.graphics.drawable.BitmapDrawable;
 import android.support.v4.view.MotionEventCompat;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 
@@ -42,7 +41,6 @@ public class PixelCropView extends View {
     private PointF mScalePoint;
     private Matrix mPreMatrix;
     private Matrix mPreSizeMatrix;
-    private Matrix mTempMatrix;
 
     //触摸事件开始时的缩放比
     private float mPreZoom;
@@ -51,13 +49,6 @@ public class PixelCropView extends View {
     private float mRotateDegree;
     //不同旋转角度下的最小缩放比
     private float mMinScale;
-
-    //Temp Var
-    private double mTempAlpha;
-    private float mTempScale;
-    private float mDiagonal;
-    private float mCropBorderWidth;
-    private float mCropBorderHeight;
 
     public PixelCropView(Context context) {
         super(context);
@@ -72,7 +63,6 @@ public class PixelCropView extends View {
 
         mPreMatrix = new Matrix();
         mPreSizeMatrix = new Matrix();
-        mTempMatrix = new Matrix();
 
         mScalePoint = new PointF();
     }
@@ -205,29 +195,9 @@ public class PixelCropView extends View {
                 break;
 
             case MotionEvent.ACTION_UP:
-                switch (mCurrentMode) {
-                    case NONE:
-                        break;
-                    case DRAG:
-
-                        break;
-                    case ZOOM:
-
-                        break;
-                }
-
                 mCurrentMode = ActionMode.NONE;
-                invalidate();
-
                 mPreMatrix.set(mCropWrapper.getMatrix());
-
-                final float[] imageIndents = CropUtil.calculateImageIndents(mCropWrapper,mCropBorder,mRotateDegree);
-                float deltaX = -(imageIndents[0] + imageIndents[2]);
-                float deltaY = -(imageIndents[1] + imageIndents[3]);
-                Log.d(TAG, "onTouchEvent: deltaX->" + deltaX + ",deltaY->" + deltaY);
-
-                mCropWrapper.getMatrix().set(mPreMatrix);
-                mCropWrapper.getMatrix().postTranslate(deltaX, deltaY);
+                invalidate();
 
                 break;
         }
@@ -245,17 +215,24 @@ public class PixelCropView extends View {
             if (mPreZoom * scale <= mMinScale) {
                 postScale(mMinScale / mCropWrapper.getScaleFactor(),
                         mMinScale / mCropWrapper.getScaleFactor(),
-                        mCropBorder.centerX(),
-                        mCropBorder.centerY(),
+                        mScalePoint.x,
+                        mScalePoint.y,
                         null);
+
+                letImageContainsBorder(0, 0, null);
+
                 return;
             }
 
             postScale(scale,
                     scale,
-                    mCropBorder.centerX(),
-                    mCropBorder.centerY(),
+                    mScalePoint.x,
+                    mScalePoint.y,
                     mPreMatrix);
+
+            if (scale < 1f) {
+                letImageContainsBorder(0, 0, null);
+            }
         }
     }
 
@@ -265,20 +242,24 @@ public class PixelCropView extends View {
                 event.getY() - mDownY,
                 mPreMatrix);
 
+        letImageContainsBorder(event.getX() - mDownX, event.getY() - mDownY, mPreMatrix);
+
+    }
+
+    private void letImageContainsBorder(float preX, float preY, Matrix preMatrix) {
         if (!isImageContainsBorder()) {
-            final float[] imageIndents = CropUtil.calculateImageIndents(mCropWrapper,mCropBorder,mRotateDegree);
+            final float[] imageIndents = CropUtil.calculateImageIndents(mCropWrapper, mCropBorder, mRotateDegree);
             float deltaX = -(imageIndents[0] + imageIndents[2]);
             float deltaY = -(imageIndents[1] + imageIndents[3]);
-            Log.d(TAG, "onTouchEvent: deltaX->" + deltaX + ",deltaY->" + deltaY);
 
-            postTranslate(event.getX() - mDownX + deltaX,
-                    event.getY() - mDownY + deltaY,
-                    mPreMatrix);
+            postTranslate(preX + deltaX,
+                    preY + deltaY,
+                    preMatrix);
         }
     }
 
     private boolean isImageContainsBorder() {
-        return CropUtil.judgeIsImageContainsBorder(mCropWrapper,mCropBorder,mRotateDegree);
+        return CropUtil.judgeIsImageContainsBorder(mCropWrapper, mCropBorder, mRotateDegree);
     }
 
     //TODO
@@ -310,13 +291,11 @@ public class PixelCropView extends View {
                     mCropBorder.centerY(),
                     mPreSizeMatrix);
 
-            mCropBorderWidth = mCropBorder.width();
-            mCropBorderHeight = mCropBorder.height();
 
-            mTempScale = CropUtil.calculateRotateScale(mCropBorderWidth, mCropBorderHeight, degrees);
-            
-            postScale(mTempScale,
-                    mTempScale,
+            float tempScale = CropUtil.calculateRotateScale(mCropBorder.width(), mCropBorder.height(), degrees);
+
+            postScale(tempScale,
+                    tempScale,
                     mCropBorder.centerX(),
                     mCropBorder.centerY(),
                     null);
