@@ -17,6 +17,7 @@ import android.view.View;
 import static java.lang.Math.sqrt;
 
 /**
+ * Pixel Crop View
  * Created by snowbean on 16-10-14.
  */
 public class PixelCropView extends View {
@@ -30,6 +31,7 @@ public class PixelCropView extends View {
 
     private CropWrapper mCropWrapper;
     private int mBorderOffset = 50;
+    private float mMaxScale = 2f;
     private Paint mBorderPaint;
     private Border mCropBorder;
 
@@ -50,6 +52,8 @@ public class PixelCropView extends View {
     //不同旋转角度下的最小缩放比
     private float mMinScale;
 
+    private int mBorderColor = Color.parseColor("#ddcbcbcb");
+
     public PixelCropView(Context context) {
         super(context);
     }
@@ -58,7 +62,7 @@ public class PixelCropView extends View {
         super(context, attrs);
         mBorderPaint = new Paint();
         mBorderPaint.setStyle(Paint.Style.STROKE);
-        mBorderPaint.setColor(Color.parseColor("#ddcbcbcb"));
+        mBorderPaint.setColor(mBorderColor);
         mBorderPaint.setStrokeWidth(3);
 
         mPreMatrix = new Matrix();
@@ -124,21 +128,35 @@ public class PixelCropView extends View {
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
 
-        if (mCropWrapper != null) {
-            mCropWrapper.draw(canvas);
-        }
-
         //画边框和阴影
-        if (mCropBorder != null) {
-            //TODO 边框，4个边角未画
+        if (mCropBorder != null && mCropWrapper != null) {
+
+            //半透明的完整图片
+            mCropWrapper.draw(canvas, 100);
+
+            //图片高亮部分
+            canvas.save();
+            canvas.clipRect(mCropBorder.getRect());
+            mCropWrapper.draw(canvas);
+            canvas.restore();
+
+            //边框
             canvas.drawRect(mCropBorder.getRect(), mBorderPaint);
 
+            //网格线
             mBorderPaint.setStrokeWidth(1);
             if (mIsRotateState) {
                 mCropBorder.drawGrid(canvas, mBorderPaint, 9, 9);
             } else if (mCurrentMode == ActionMode.DRAG || mCurrentMode == ActionMode.ZOOM) {
                 mCropBorder.drawGrid(canvas, mBorderPaint, 3, 3);
             }
+
+            //画边框
+            mBorderPaint.setStrokeWidth(5);
+            mBorderPaint.setColor(Color.WHITE);
+            mCropBorder.drawCorner(canvas, mBorderPaint);
+
+            mBorderPaint.setColor(mBorderColor);
             mBorderPaint.setStrokeWidth(3);
         }
 
@@ -190,6 +208,7 @@ public class PixelCropView extends View {
             case MotionEvent.ACTION_POINTER_UP:
                 mCurrentMode = ActionMode.NONE;
                 float currentZoom = mCropWrapper.getScaleFactor();
+
                 mPreSizeMatrix.postScale(currentZoom / mPreZoom, currentZoom / mPreZoom,
                         mCropBorder.centerX(), mCropBorder.centerY());
                 break;
@@ -211,7 +230,6 @@ public class PixelCropView extends View {
 
             float scale = newDistance / mOldDistance;
 
-            //TODO 缩放中心的问题
             if (mPreZoom * scale <= mMinScale) {
                 postScale(mMinScale / mCropWrapper.getScaleFactor(),
                         mMinScale / mCropWrapper.getScaleFactor(),
@@ -221,23 +239,31 @@ public class PixelCropView extends View {
 
                 letImageContainsBorder(0, 0, null);
 
-                return;
-            }
+            } else if (mPreZoom * scale >= mMaxScale) {
+                postScale(mMaxScale / mCropWrapper.getScaleFactor(),
+                        mMaxScale / mCropWrapper.getScaleFactor(),
+                        mScalePoint.x,
+                        mScalePoint.y,
+                        null);
+                
+            } else {
+                postScale(scale,
+                        scale,
+                        mScalePoint.x,
+                        mScalePoint.y,
+                        mPreMatrix);
 
-            postScale(scale,
-                    scale,
-                    mScalePoint.x,
-                    mScalePoint.y,
-                    mPreMatrix);
-
-            if (scale < 1f) {
-                letImageContainsBorder(0, 0, null);
+                if (scale < 1f) {
+                    letImageContainsBorder(0, 0, null);
+                }
             }
         }
     }
 
 
     private void handleDragEvent(MotionEvent event) {
+        if (mCropWrapper.getScaleFactor()==mMinScale) return;
+
         postTranslate(event.getX() - mDownX,
                 event.getY() - mDownY,
                 mPreMatrix);
@@ -267,11 +293,11 @@ public class PixelCropView extends View {
         mRotateDegree = degrees;
 
         if (degrees > 0) {
-            for (float i = degrees - 1; i <= degrees; i += 0.1) {
+            for (float i = degrees - 1; i <= degrees; i += 0.2) {
                 rotate(i);
             }
         } else {
-            for (float i = degrees + 1; i >= degrees; i -= 0.1) {
+            for (float i = degrees + 1; i >= degrees; i -= 0.2) {
                 rotate(i);
             }
         }
@@ -294,6 +320,10 @@ public class PixelCropView extends View {
 
             float tempScale = CropUtil.calculateRotateScale(mCropBorder.width(), mCropBorder.height(), degrees);
 
+
+            if (tempScale * mCropWrapper.getScaleFactor() >= mMaxScale) {
+                tempScale = mMaxScale / mCropWrapper.getScaleFactor();
+            }
             postScale(tempScale,
                     tempScale,
                     mCropBorder.centerX(),
@@ -306,7 +336,8 @@ public class PixelCropView extends View {
     }
 
     private PointF calculateMidPoint(MotionEvent event) {
-        if (event == null || event.getPointerCount() < 2) return new PointF();
+        if (event == null || event.getPointerCount() < 2)
+            return new PointF();
         float x = (event.getX(0) + event.getX(1)) / 2;
         float y = (event.getY(0) + event.getY(1)) / 2;
         return new PointF(x, y);
@@ -314,7 +345,8 @@ public class PixelCropView extends View {
 
     //计算两点间的距离
     private float calculateDistance(MotionEvent event) {
-        if (event == null || event.getPointerCount() < 2) return 0f;
+        if (event == null || event.getPointerCount() < 2)
+            return 0f;
         float x = event.getX(0) - event.getX(1);
         float y = event.getY(0) - event.getY(1);
 
@@ -351,7 +383,10 @@ public class PixelCropView extends View {
             mMinScale = scaleX;
 
             mCropWrapper.getMatrix()
-                    .postScale(scaleX, scaleY, mCropWrapper.getMappedCenterPoint().x, mCropWrapper.getMappedCenterPoint().y);
+                    .postScale(scaleX,
+                            scaleY,
+                            mCropWrapper.getMappedCenterPoint().x,
+                            mCropWrapper.getMappedCenterPoint().y);
         }
 
         invalidate();

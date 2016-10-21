@@ -44,6 +44,8 @@ class Border {
         rightBottom = src.lineRight.end;
 
         cornerPoints = src.cornerPoints;
+
+        mRect.set(src.mRect);
     }
 
     Border(RectF baseRect) {
@@ -138,6 +140,22 @@ class Border {
                     left() + width() * i / column, bottom(),
                     paint);
         }
+    }
+
+    public void drawCorner(Canvas canvas, Paint paint) {
+        canvas.drawLine(cornerPoints[0] - 1.5f, cornerPoints[1], cornerPoints[0] + 32 - 1.5f, cornerPoints[1], paint);
+        canvas.drawLine(cornerPoints[0], cornerPoints[1] - 1.5f, cornerPoints[0], cornerPoints[1] + 32 - 1.5f, paint);
+
+        canvas.drawLine(cornerPoints[2], cornerPoints[3], cornerPoints[2] - 32, cornerPoints[3], paint);
+        canvas.drawLine(cornerPoints[2] - 1.5f, cornerPoints[3] - 1.5f, cornerPoints[2] - 1.5f, cornerPoints[3] + 32, paint);
+
+        canvas.drawLine(cornerPoints[4], cornerPoints[5] - 1.5f, cornerPoints[4] + 32, cornerPoints[5] - 1.5f, paint);
+        canvas.drawLine(cornerPoints[4], cornerPoints[5], cornerPoints[4], cornerPoints[5] - 32, paint);
+
+        canvas.drawLine(cornerPoints[6], cornerPoints[7] - 1.5f, cornerPoints[6] - 32, cornerPoints[7] - 1.5f, paint);
+        canvas.drawLine(cornerPoints[6] - 1.5f, cornerPoints[7], cornerPoints[6] - 1.5f, cornerPoints[7] - 32, paint);
+
+
     }
 
     @Override

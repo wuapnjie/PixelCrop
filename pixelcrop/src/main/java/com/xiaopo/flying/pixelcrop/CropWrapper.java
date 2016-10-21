@@ -17,20 +17,11 @@ public class CropWrapper {
 
     private Rect mRealBound;
     private RectF mMappedBound = new RectF();
-    private float[] mMappedCornerPointsSides = new float[8];
-    private PointF[] mMappedCornerPoints;
 
     public CropWrapper(Drawable drawable, Matrix matrix) {
         mDrawable = drawable;
         mMatrix = matrix;
         mRealBound = new Rect(0, 0, getWidth(), getHeight());
-
-        mMappedCornerPoints = new PointF[]{
-                new PointF(0, 0),
-                new PointF(getWidth(), 0),
-                new PointF(getWidth(), getHeight()),
-                new PointF(0, getHeight())
-        };
     }
 
     public void draw(Canvas canvas, int alpha) {
@@ -68,15 +59,6 @@ public class CropWrapper {
         float[] dst = new float[8];
         mMatrix.mapPoints(dst, getBoundPoints());
         return dst;
-    }
-
-    public PointF[] getMappedCornerPoints() {
-        mMatrix.mapPoints(mMappedCornerPointsSides, getBoundPoints());
-        mMappedCornerPoints[0].set(mMappedCornerPointsSides[0], mMappedCornerPointsSides[1]);
-        mMappedCornerPoints[1].set(mMappedCornerPointsSides[2], mMappedCornerPointsSides[3]);
-        mMappedCornerPoints[2].set(mMappedCornerPointsSides[4], mMappedCornerPointsSides[5]);
-        mMappedCornerPoints[3].set(mMappedCornerPointsSides[6], mMappedCornerPointsSides[7]);
-        return mMappedCornerPoints;
     }
 
     public float[] getMappedPoints(float[] src) {

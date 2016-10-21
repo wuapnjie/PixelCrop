@@ -16,6 +16,7 @@ import static java.lang.Math.sqrt;
 import static java.lang.Math.toRadians;
 
 /**
+ * The utility class in Crop
  * Created by snowbean on 16-10-15.
  */
 class CropUtil {
@@ -113,6 +114,9 @@ class CropUtil {
 
 
     static float[] calculateImageIndents(CropWrapper cropWrapper, Border cropBorder, float rotateDegrees) {
+        if (cropBorder == null || cropWrapper == null)
+            return new float[]{0, 0, 0, 0, 0, 0, 0, 0};
+
         sTempMatrix.reset();
         sTempMatrix.setRotate(-rotateDegrees);
 
