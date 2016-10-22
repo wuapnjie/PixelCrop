@@ -113,12 +113,12 @@ class CropUtil {
     }
 
 
-    static float[] calculateImageIndents(CropWrapper cropWrapper, Border cropBorder, float rotateDegrees) {
+    static float[] calculateImageIndents(CropWrapper cropWrapper, Border cropBorder) {
         if (cropBorder == null || cropWrapper == null)
             return new float[]{0, 0, 0, 0, 0, 0, 0, 0};
 
         sTempMatrix.reset();
-        sTempMatrix.setRotate(-rotateDegrees);
+        sTempMatrix.setRotate(-cropWrapper.getCurrentAngle());
 
         float[] currentImageCorners = cropWrapper.getMappedBoundPoints();
         float[] unrotatedImageCorners = Arrays.copyOf(currentImageCorners, currentImageCorners.length);
@@ -143,7 +143,7 @@ class CropUtil {
         indents[3] = (deltaBottom < 0) ? deltaBottom : 0;
 
         sTempMatrix.reset();
-        sTempMatrix.setRotate(rotateDegrees);
+        sTempMatrix.setRotate(cropWrapper.getCurrentAngle());
         sTempMatrix.mapPoints(indents);
 
         return indents;
@@ -166,16 +166,13 @@ class CropUtil {
         return r;
     }
 
-    private static float[] getCornersFromRect(RectF r) {
-        sCorners[0] = r.left;
-        sCorners[1] = r.top;
-        sCorners[2] = r.right;
-        sCorners[3] = r.top;
-        sCorners[4] = r.right;
-        sCorners[5] = r.bottom;
-        sCorners[6] = r.left;
-        sCorners[7] = r.bottom;
-        return sCorners;
+    public static float[] getCornersFromRect(RectF r) {
+        return new float[]{
+                r.left, r.top,
+                r.right, r.top,
+                r.right, r.bottom,
+                r.left, r.bottom
+        };
     }
 
 }

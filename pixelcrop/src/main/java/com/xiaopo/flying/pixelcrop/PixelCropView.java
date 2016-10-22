@@ -239,13 +239,6 @@ public class PixelCropView extends View {
 
                 letImageContainsBorder(0, 0, null);
 
-            } else if (mPreZoom * scale >= mMaxScale) {
-                postScale(mMaxScale / mCropWrapper.getScaleFactor(),
-                        mMaxScale / mCropWrapper.getScaleFactor(),
-                        mScalePoint.x,
-                        mScalePoint.y,
-                        null);
-                
             } else {
                 postScale(scale,
                         scale,
@@ -262,7 +255,6 @@ public class PixelCropView extends View {
 
 
     private void handleDragEvent(MotionEvent event) {
-        if (mCropWrapper.getScaleFactor()==mMinScale) return;
 
         postTranslate(event.getX() - mDownX,
                 event.getY() - mDownY,
@@ -274,7 +266,7 @@ public class PixelCropView extends View {
 
     private void letImageContainsBorder(float preX, float preY, Matrix preMatrix) {
         if (!isImageContainsBorder()) {
-            final float[] imageIndents = CropUtil.calculateImageIndents(mCropWrapper, mCropBorder, mRotateDegree);
+            final float[] imageIndents = CropUtil.calculateImageIndents(mCropWrapper, mCropBorder);
             float deltaX = -(imageIndents[0] + imageIndents[2]);
             float deltaY = -(imageIndents[1] + imageIndents[3]);
 
@@ -320,10 +312,6 @@ public class PixelCropView extends View {
 
             float tempScale = CropUtil.calculateRotateScale(mCropBorder.width(), mCropBorder.height(), degrees);
 
-
-            if (tempScale * mCropWrapper.getScaleFactor() >= mMaxScale) {
-                tempScale = mMaxScale / mCropWrapper.getScaleFactor();
-            }
             postScale(tempScale,
                     tempScale,
                     mCropBorder.centerX(),

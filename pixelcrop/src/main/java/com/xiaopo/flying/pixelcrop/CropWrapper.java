@@ -6,6 +6,8 @@ import android.graphics.PointF;
 import android.graphics.Rect;
 import android.graphics.RectF;
 import android.graphics.drawable.Drawable;
+import android.support.annotation.IntRange;
+import android.support.annotation.NonNull;
 
 /**
  * Created by snowbean on 16-10-14.
@@ -17,6 +19,7 @@ public class CropWrapper {
 
     private Rect mRealBound;
     private RectF mMappedBound = new RectF();
+    private float[] mMatrixValues = new float[9];
 
     public CropWrapper(Drawable drawable, Matrix matrix) {
         mDrawable = drawable;
@@ -143,5 +146,23 @@ public class CropWrapper {
     public float getScaleFactor() {
         return getMappedWidth() / getWidth();
     }
+    /**
+     * @return - current image rotation angle.
+     */
+    public float getCurrentAngle() {
+        return getMatrixAngle(mMatrix);
+    }
 
+    /**
+     * This method calculates rotation angle for given Matrix object.
+     */
+    public float getMatrixAngle(@NonNull Matrix matrix) {
+        return (float) -(Math.atan2(getMatrixValue(matrix, Matrix.MSKEW_X),
+                getMatrixValue(matrix, Matrix.MSCALE_X)) * (180 / Math.PI));
+    }
+
+    protected float getMatrixValue(@NonNull Matrix matrix, @IntRange(from = 0, to = 9) int valueIndex) {
+        matrix.getValues(mMatrixValues);
+        return mMatrixValues[valueIndex];
+    }
 }
