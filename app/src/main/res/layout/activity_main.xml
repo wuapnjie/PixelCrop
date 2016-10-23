@@ -3,9 +3,9 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/content_main"
-    android:background="@android:color/black"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@android:color/black"
     app:layout_behavior="@string/appbar_scrolling_view_behavior"
     tools:context="com.xiaopo.flying.sample.MainActivity"
     tools:showIn="@layout/activity_main">
@@ -14,12 +14,33 @@
     <com.xiaopo.flying.pixelcrop.PixelCropView
         android:id="@+id/pixel_crop_view"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"/>
+        android:layout_height="match_parent" />
 
-    <SeekBar
-        android:id="@+id/seekbar"
-        android:layout_marginBottom="30dp"
+    <LinearLayout
+        android:gravity="center"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
         android:layout_gravity="center|bottom"
-        android:layout_width="300dp"
-        android:layout_height="50dp" />
+        android:orientation="vertical">
+
+        <SeekBar
+            android:id="@+id/seekbar"
+            android:layout_width="300dp"
+            android:layout_height="50dp" />
+
+        <Button
+            android:onClick="pick"
+            android:id="@+id/btn_pick"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="挑选" />
+
+        <Button
+            android:onClick="crop"
+            android:id="@+id/btn_crop"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="剪裁" />
+    </LinearLayout>
+
 </FrameLayout>

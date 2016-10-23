@@ -9,10 +9,18 @@ import android.graphics.Paint;
 import android.graphics.PointF;
 import android.graphics.RectF;
 import android.graphics.drawable.BitmapDrawable;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 import android.support.v4.view.MotionEventCompat;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
+
+import com.yalantis.ucrop.task.BitmapCropCallback;
+import com.yalantis.ucrop.task.BitmapCropTask;
+import com.yalantis.ucrop.task.CropParameters;
+import com.yalantis.ucrop.task.ExifInfo;
+import com.yalantis.ucrop.task.ImageState;
 
 import static java.lang.Math.sqrt;
 
@@ -341,10 +349,23 @@ public class PixelCropView extends View {
         return (float) sqrt(x * x + y * y);
     }
 
-    public void setCropBitmap(Bitmap bitmap) {
+//    public void setCropBitmap(Bitmap bitmap) {
+//        //TODO Matrix create
+//        mCropWrapper = new CropWrapper(new BitmapDrawable(getResources(), bitmap), new Matrix());
+//        setWrapperToFitBorder();
+//
+//        invalidate();
+//    }
+
+    public void setCropBitmap(Bitmap bitmap, String inputPath, String outputPath) {
         //TODO Matrix create
-        mCropWrapper = new CropWrapper(new BitmapDrawable(getResources(), bitmap), new Matrix());
+        mCropWrapper = new CropWrapper(new BitmapDrawable(getResources(), bitmap), new Matrix(), inputPath, outputPath);
+
+        setUpDefaultCropBorder(getMeasuredWidth(), getMeasuredHeight());
+
         setWrapperToFitBorder();
+        mPreMatrix.set(mCropWrapper.getMatrix());
+        mPreSizeMatrix.set(mCropWrapper.getMatrix());
 
         invalidate();
     }
@@ -402,5 +423,30 @@ public class PixelCropView extends View {
             mCropWrapper.getMatrix().set(preMatrix);
         }
         mCropWrapper.getMatrix().postRotate(rotateDegrees, px, py);
+    }
+
+
+    /**
+     * Cancels all current animations and sets image to fill crop area (without animation).
+     * Then creates and executes {@link BitmapCropTask} with proper parameters.
+     */
+    public void cropAndSaveImage(@NonNull Bitmap.CompressFormat compressFormat, int compressQuality,
+                                 @Nullable BitmapCropCallback cropCallback) {
+        letImageContainsBorder(0, 0, null);
+
+        final ImageState imageState = new ImageState(
+                mCropBorder.getRect(), CropUtil.trapToRect(mCropWrapper.getMappedBoundPoints()),
+                mCropWrapper.getCurrentScale(), mCropWrapper.getCurrentAngle());
+
+        final CropParameters cropParameters = new CropParameters(
+                2048, 2048,
+                compressFormat, compressQuality,
+                mCropWrapper.getInputPath(), mCropWrapper.getOutputPath(), new ExifInfo(0, 0, 0));
+
+        new BitmapCropTask(((BitmapDrawable) mCropWrapper.getDrawable()).getBitmap(),
+                imageState,
+                cropParameters,
+                cropCallback)
+                .execute();
     }
 }

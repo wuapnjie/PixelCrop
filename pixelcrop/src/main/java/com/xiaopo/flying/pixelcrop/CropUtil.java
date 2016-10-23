@@ -143,7 +143,7 @@ class CropUtil {
 
 
     //计算包含给出点的最小矩形
-    private static RectF trapToRect(float[] array) {
+    public static RectF trapToRect(float[] array) {
         RectF r = new RectF(Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY,
                 Float.NEGATIVE_INFINITY, Float.NEGATIVE_INFINITY);
         for (int i = 1; i < array.length; i += 2) {

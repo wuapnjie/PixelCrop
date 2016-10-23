@@ -21,9 +21,14 @@ public class CropWrapper {
     private RectF mMappedBound = new RectF();
     private float[] mMatrixValues = new float[9];
 
-    public CropWrapper(Drawable drawable, Matrix matrix) {
+    private String mInputPath;
+    private String mOutputPath;
+
+    public CropWrapper(Drawable drawable, Matrix matrix, String inputPath, String outputPath) {
         mDrawable = drawable;
         mMatrix = matrix;
+        mInputPath = inputPath;
+        mOutputPath = outputPath;
         mRealBound = new Rect(0, 0, getWidth(), getHeight());
     }
 
@@ -134,9 +139,46 @@ public class CropWrapper {
         return getMappedCenterPoint().y - getCenterPoint().y;
     }
 
-    public float getScaleFactor() {
-        return getMappedWidth() / getWidth();
+    public String getInputPath() {
+        return mInputPath;
     }
+
+    public void setInputPath(String inputPath) {
+        mInputPath = inputPath;
+    }
+
+    public String getOutputPath() {
+        return mOutputPath;
+    }
+
+    public void setOutputPath(String outputPath) {
+        mOutputPath = outputPath;
+    }
+
+    public float getScaleFactor() {
+        if (getWidth() >= getHeight()) {
+            return getMappedWidth() / getWidth();
+        } else {
+            return getMappedHeight() / getHeight();
+        }
+    }
+
+    /**
+     * @return - current image scale value.
+     * [1.0f - for original image, 2.0f - for 200% scaled image, etc.]
+     */
+    public float getCurrentScale() {
+        return getMatrixScale(mMatrix);
+    }
+
+    /**
+     * This method calculates scale value for given Matrix object.
+     */
+    public float getMatrixScale(@NonNull Matrix matrix) {
+        return (float) Math.sqrt(Math.pow(getMatrixValue(matrix, Matrix.MSCALE_X), 2)
+                + Math.pow(getMatrixValue(matrix, Matrix.MSKEW_Y), 2));
+    }
+
     /**
      * @return - current image rotation angle.
      */

@@ -26,6 +26,7 @@ dependencies {
     })
     compile 'com.android.support:appcompat-v7:25.0.0'
     compile 'com.android.support:design:25.0.0'
+    compile 'com.flying.xiaopo:poiphoto:0.4.2'
     testCompile 'junit:junit:4.12'
     compile project(':pixelcrop')
 }
