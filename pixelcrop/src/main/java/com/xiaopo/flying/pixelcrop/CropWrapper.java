@@ -41,21 +41,12 @@ public class CropWrapper {
     }
 
     public float[] getBoundPoints() {
-//        if (!mIsFlipped) {
         return new float[]{
                 0f, 0f,
                 getWidth(), 0f,
                 getWidth(), getHeight(),
                 0f, getHeight()
         };
-//        } else {
-//        return new float[]{
-//                getWidth(), 0f,
-//                0f, 0f,
-//                getWidth(), getHeight(),
-//                0f, getHeight()
-//        };
-//        }
     }
 
     public float[] getMappedBoundPoints() {

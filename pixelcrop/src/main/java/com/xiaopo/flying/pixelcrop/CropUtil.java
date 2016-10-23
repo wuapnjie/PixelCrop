@@ -22,17 +22,11 @@ import static java.lang.Math.toRadians;
 class CropUtil {
     private static final String TAG = "CropUtil";
 
-    private static float[] sCorners = new float[8];
-    private static float[] sMinZooms = new float[100];
     private static Matrix sTempMatrix = new Matrix();
 
     //计算不同旋转角度下的最小缩放值
     static float calculateMinScale(CropWrapper cropWrapper, Border cropBorder, int degrees) {
         if (cropWrapper != null && cropBorder != null) {
-
-            if (sMinZooms != null && sMinZooms.length > 45 + degrees && sMinZooms[45 + degrees] != 0) {
-                return sMinZooms[45 + degrees];
-            }
 
             float borderWidth = cropBorder.width();
             float borderHeight = cropBorder.height();
@@ -46,8 +40,7 @@ class CropUtil {
                 double ww = tempScale * borderWidth;
                 double temp = (hh * sin(toRadians(abs(degrees))) + ww * cos(toRadians(abs(degrees))));
 
-                sMinZooms[45 + degrees] = (float) (temp / cropWrapper.getWidth());
-                return sMinZooms[45 + degrees];
+                return (float) (temp / cropWrapper.getWidth());
             } else {
                 double tempAlpha = atan(borderWidth / borderHeight);
                 double tempScale = (float) (mDiagonal * sin(toRadians(abs(degrees)) + tempAlpha) / borderWidth);
@@ -55,8 +48,7 @@ class CropUtil {
                 double ww = tempScale * borderWidth;
                 double temp = (ww * sin(toRadians(abs(degrees))) + hh * cos(toRadians(abs(degrees))));
 
-                sMinZooms[45 + degrees] = (float) (temp / cropWrapper.getHeight());
-                return sMinZooms[45 + degrees];
+                return (float) (temp / cropWrapper.getHeight());
             }
 
         }
