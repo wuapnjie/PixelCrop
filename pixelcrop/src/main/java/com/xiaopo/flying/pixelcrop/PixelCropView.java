@@ -9,15 +9,19 @@ import android.graphics.Paint;
 import android.graphics.PointF;
 import android.graphics.RectF;
 import android.graphics.drawable.BitmapDrawable;
+import android.net.Uri;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.view.MotionEventCompat;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.view.View;
 
 import com.yalantis.ucrop.task.BitmapCropCallback;
 import com.yalantis.ucrop.task.BitmapCropTask;
+import com.yalantis.ucrop.task.BitmapLoadCallback;
+import com.yalantis.ucrop.task.BitmapLoadUtils;
 import com.yalantis.ucrop.task.CropParameters;
 import com.yalantis.ucrop.task.ExifInfo;
 import com.yalantis.ucrop.task.ImageState;
@@ -39,12 +43,14 @@ public class PixelCropView extends View {
 
     private CropWrapper mCropWrapper;
     private int mBorderOffset = 50;
-    private float mMaxScale = 2f;
     private Paint mBorderPaint;
     private Border mCropBorder;
 
     private float mDownX;
     private float mDownY;
+
+    private PointF mDownCenterPoint;
+
     private float mOldDistance;
 
     //缩放点
@@ -59,6 +65,7 @@ public class PixelCropView extends View {
     private float mRotateDegree;
     //不同旋转角度下的最小缩放比
     private float mMinScale;
+    private int mMaxBitmapSize;
 
     private int mBorderColor = Color.parseColor("#ddcbcbcb");
 
@@ -179,6 +186,9 @@ public class PixelCropView extends View {
                 mDownX = event.getX();
                 mDownY = event.getY();
 
+                mDownCenterPoint = mCropWrapper.getMappedCenterPoint();
+                Log.d(TAG, "onTouchEvent: down-->" + mDownCenterPoint.toString());
+
                 if (mCropWrapper != null) {
                     mPreMatrix.set(mCropWrapper.getMatrix());
                 }
@@ -225,6 +235,10 @@ public class PixelCropView extends View {
                 mCurrentMode = ActionMode.NONE;
                 mPreMatrix.set(mCropWrapper.getMatrix());
                 invalidate();
+
+                PointF currentCenterPoint = mCropWrapper.getMappedCenterPoint();
+                mPreSizeMatrix.postTranslate(currentCenterPoint.x - mDownCenterPoint.x, currentCenterPoint.y - mDownCenterPoint.y);
+                Log.d(TAG, "onTouchEvent: current-->" + currentCenterPoint.toString());
 
                 break;
         }
@@ -302,6 +316,8 @@ public class PixelCropView extends View {
             }
         }
 
+        letImageContainsBorder(0, 0, null);
+
         mMinScale = CropUtil.calculateMinScale(mCropWrapper, mCropBorder, degrees);
 
     }
@@ -349,25 +365,11 @@ public class PixelCropView extends View {
         return (float) sqrt(x * x + y * y);
     }
 
-//    public void setCropBitmap(Bitmap bitmap) {
-//        //TODO Matrix create
-//        mCropWrapper = new CropWrapper(new BitmapDrawable(getResources(), bitmap), new Matrix());
-//        setWrapperToFitBorder();
-//
-//        invalidate();
-//    }
-
-    public void setCropBitmap(Bitmap bitmap, String inputPath, String outputPath) {
-        //TODO Matrix create
-        mCropWrapper = new CropWrapper(new BitmapDrawable(getResources(), bitmap), new Matrix(), inputPath, outputPath);
-
-        setUpDefaultCropBorder(getMeasuredWidth(), getMeasuredHeight());
-
-        setWrapperToFitBorder();
-        mPreMatrix.set(mCropWrapper.getMatrix());
-        mPreSizeMatrix.set(mCropWrapper.getMatrix());
-
-        invalidate();
+    public int getMaxBitmapSize() {
+        if (mMaxBitmapSize <= 0) {
+            mMaxBitmapSize = BitmapLoadUtils.calculateMaxBitmapSize(getContext());
+        }
+        return mMaxBitmapSize;
     }
 
     public void setRotateState(boolean rotateState) {
@@ -439,14 +441,49 @@ public class PixelCropView extends View {
                 mCropWrapper.getCurrentScale(), mCropWrapper.getCurrentAngle());
 
         final CropParameters cropParameters = new CropParameters(
-                2048, 2048,
+                mMaxBitmapSize, mMaxBitmapSize,
                 compressFormat, compressQuality,
-                mCropWrapper.getInputPath(), mCropWrapper.getOutputPath(), new ExifInfo(0, 0, 0));
+                mCropWrapper.getInputPath(), mCropWrapper.getOutputPath(), mCropWrapper.getExifInfo());
 
         new BitmapCropTask(((BitmapDrawable) mCropWrapper.getDrawable()).getBitmap(),
                 imageState,
                 cropParameters,
                 cropCallback)
                 .execute();
+    }
+
+
+    public void setCropUri(Uri imageUri, Uri outputUri) {
+        int maxBitmapSize = getMaxBitmapSize();
+
+        BitmapLoadUtils.decodeBitmapInBackground(getContext(), imageUri, outputUri, maxBitmapSize, maxBitmapSize,
+                new BitmapLoadCallback() {
+
+                    @Override
+                    public void onBitmapLoaded(@NonNull Bitmap bitmap, @NonNull ExifInfo exifInfo, @NonNull String imageInputPath, @Nullable String imageOutputPath) {
+
+                        mCropWrapper = new CropWrapper(new BitmapDrawable(getResources(), bitmap), new Matrix(), imageInputPath, imageOutputPath, exifInfo);
+
+                        setUpDefaultCropBorder(getMeasuredWidth(), getMeasuredHeight());
+
+                        setWrapperToFitBorder();
+                        mPreMatrix.set(mCropWrapper.getMatrix());
+                        mPreSizeMatrix.set(mCropWrapper.getMatrix());
+
+                        invalidate();
+//                        mImageInputPath = imageInputPath;
+//                        mImageOutputPath = imageOutputPath;
+//                        mExifInfo = exifInfo;
+
+//                        mBitmapDecoded = true;
+//                        setImageBitmap(bitmap);
+                    }
+
+                    @Override
+                    public void onFailure(@NonNull Exception bitmapWorkerException) {
+                        Log.e(TAG, "onFailure: setImageUri", bitmapWorkerException);
+
+                    }
+                });
     }
 }

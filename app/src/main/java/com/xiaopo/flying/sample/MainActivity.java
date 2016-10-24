@@ -13,6 +13,7 @@ import android.support.v4.app.NotificationCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
 import android.widget.SeekBar;
+import android.widget.Toast;
 
 import com.xiaopo.flying.pixelcrop.PixelCropView;
 import com.xiaopo.flying.poiphoto.Define;
@@ -69,11 +70,7 @@ public class MainActivity extends AppCompatActivity {
         mPixelCropView.cropAndSaveImage(Bitmap.CompressFormat.JPEG, 90, new BitmapCropCallback() {
             @Override
             public void onBitmapCropped(@NonNull Uri resultUri, int imageWidth, int imageHeight) {
-                try {
-                    copyFileToDownloads(resultUri);
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
+                Toast.makeText(MainActivity.this, "Crop Succeed", Toast.LENGTH_SHORT).show();
             }
 
             @Override
@@ -96,7 +93,7 @@ public class MainActivity extends AppCompatActivity {
 
             System.out.println(newFile.getPath());
 
-            mPixelCropView.setCropBitmap(bitmap, paths.get(0), newFile.getPath());
+            mPixelCropView.setCropUri(Uri.parse("file:///"+paths.get(0)), Uri.parse("file:///"+newFile.getAbsolutePath()));
         }
     }
 

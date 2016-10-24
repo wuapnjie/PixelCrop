@@ -9,6 +9,8 @@ import android.graphics.drawable.Drawable;
 import android.support.annotation.IntRange;
 import android.support.annotation.NonNull;
 
+import com.yalantis.ucrop.task.ExifInfo;
+
 /**
  * Created by snowbean on 16-10-14.
  */
@@ -23,12 +25,16 @@ public class CropWrapper {
 
     private String mInputPath;
     private String mOutputPath;
+    private ExifInfo mExifInfo;
 
-    public CropWrapper(Drawable drawable, Matrix matrix, String inputPath, String outputPath) {
+
+
+    public CropWrapper(Drawable drawable, Matrix matrix, String inputPath, String outputPath, ExifInfo exifInfo) {
         mDrawable = drawable;
         mMatrix = matrix;
         mInputPath = inputPath;
         mOutputPath = outputPath;
+        mExifInfo = exifInfo;
         mRealBound = new Rect(0, 0, getWidth(), getHeight());
     }
 
@@ -197,5 +203,13 @@ public class CropWrapper {
     protected float getMatrixValue(@NonNull Matrix matrix, @IntRange(from = 0, to = 9) int valueIndex) {
         matrix.getValues(mMatrixValues);
         return mMatrixValues[valueIndex];
+    }
+
+    public ExifInfo getExifInfo() {
+        return mExifInfo;
+    }
+
+    public void setExifInfo(ExifInfo exifInfo) {
+        mExifInfo = exifInfo;
     }
 }
