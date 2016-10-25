@@ -29,7 +29,7 @@ public class DegreeSeekBar extends View {
     private float mLastTouchedPosition;
 
     private Paint mPointPaint;
-    private int mPointMargin;
+    private float mPointMargin;
 
     private boolean mScrollStarted;
     private int mTotalScrollDistance;
@@ -38,7 +38,7 @@ public class DegreeSeekBar extends View {
 
     private int mCurrentDegrees = 0;
     private static final String DEGREE = "°";
-    private int mPointCount = 50;
+    private int mPointCount = 51;
 
     public DegreeSeekBar(Context context) {
         this(context, null);
@@ -70,6 +70,7 @@ public class DegreeSeekBar extends View {
         mTextPaint.setAntiAlias(true);
         mTextPaint.setTextSize(24f);
         mTextPaint.setTextAlign(Paint.Align.LEFT);
+        mTextPaint.setAlpha(100);
 
         mFontMetrics = mTextPaint.getFontMetricsInt();
 
@@ -86,11 +87,11 @@ public class DegreeSeekBar extends View {
     @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
         super.onSizeChanged(w, h, oldw, oldh);
-        mPointMargin = w / mPointCount;
+        mPointMargin = (float) w / mPointCount;
 
         mBaseLine = (h - mFontMetrics.bottom + mFontMetrics.top) / 2 - mFontMetrics.top;
 
-        mIndicatorPath.moveTo(w / 2, h / 2 + mFontMetrics.top / 2 - 15);
+        mIndicatorPath.moveTo(w / 2, h / 2 + mFontMetrics.top / 2 - 18);
         mIndicatorPath.rLineTo(-8, -8);
         mIndicatorPath.rLineTo(16, 0);
 
@@ -101,30 +102,33 @@ public class DegreeSeekBar extends View {
         switch (event.getAction()) {
             case MotionEvent.ACTION_DOWN:
                 mLastTouchedPosition = event.getX();
+                if (!mScrollStarted) {
+                    mScrollStarted = true;
+                    if (mScrollingListener != null) {
+                        mScrollingListener.onScrollStart();
+                    }
+                }
                 break;
             case MotionEvent.ACTION_UP:
                 if (mScrollingListener != null) {
                     mScrollStarted = false;
                     mScrollingListener.onScrollEnd();
                 }
+                invalidate();
                 break;
             case MotionEvent.ACTION_MOVE:
                 float distance = event.getX() - mLastTouchedPosition;
                 if (mCurrentDegrees >= 45 && distance < 0) {
                     mCurrentDegrees = 45;
+                    invalidate();
                     break;
                 }
                 if (mCurrentDegrees <= -45 && distance > 0) {
                     mCurrentDegrees = -45;
+                    invalidate();
                     break;
                 }
                 if (distance != 0) {
-                    if (!mScrollStarted) {
-                        mScrollStarted = true;
-                        if (mScrollingListener != null) {
-                            mScrollingListener.onScrollStart();
-                        }
-                    }
                     onScrollEvent(event, distance);
                 }
                 break;
@@ -135,82 +139,64 @@ public class DegreeSeekBar extends View {
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-//        canvas.drawRect(0, 0, getWidth(), getHeight(), mTextPaint);
-//        canvas.drawLine(getWidth() / 2, 0, getWidth() / 2, getHeight(), mTextPaint);
-//        canvas.drawLine(0, getHeight() / 2, getWidth(), getHeight() / 2, mTextPaint);
-
         canvas.getClipBounds(mCanvasClipBounds);
 
-        int linesCount = mCanvasClipBounds.width() / mPointMargin;
-        int deltaX = (mTotalScrollDistance) % (mPointMargin);
-//
-//        Log.d(TAG, "onDraw: delta space-->" + (mTotalScrollDistance) / (mPointMargin));
-//        Log.d(TAG, "onDraw: deltaX-->" + deltaX);
-//        System.out.println("lineCount->" + linesCount);
-
+        int zeroIndex = mPointCount / 2 + (0 - mCurrentDegrees) / 2;
         mPointPaint.setColor(Color.WHITE);
-        for (int i = 0; i < linesCount; i++) {
-//            if (i < (linesCount / 4)) {
-//                mPointPaint.setAlpha((int) (255 * (i / (float) (linesCount / 4))));
-//            } else if (i > (linesCount * 3 / 4)) {
-//                mPointPaint.setAlpha((int) (255 * ((linesCount - i) / (float) (linesCount / 4))));
-//            } else {
-//                mPointPaint.setAlpha(255);
-//            }
+        for (int i = 0; i < mPointCount; i++) {
 
-            canvas.drawPoint(mCanvasClipBounds.left + i * mPointMargin,
+            if (i > zeroIndex - 22 && i < zeroIndex + 22 && mScrollStarted) {
+                mPointPaint.setAlpha(255);
+            } else {
+                mPointPaint.setAlpha(100);
+            }
+
+            if (i > mPointCount / 2 - 8 && i < mPointCount / 2 + 8
+                    && i > zeroIndex - 22 && i < zeroIndex + 22) {
+                if (mScrollStarted)
+                    mPointPaint.setAlpha(Math.abs(mPointCount / 2 - i) * 255 / 8);
+                else
+                    mPointPaint.setAlpha(Math.abs(mPointCount / 2 - i) * 100 / 8);
+            }
+
+            canvas.drawPoint(mCanvasClipBounds.centerX() + (i - mPointCount / 2) * mPointMargin,
                     mCanvasClipBounds.centerY(), mPointPaint);
+
+            if (mCurrentDegrees != 0 && i == zeroIndex) {
+                if (mScrollStarted) {
+                    mTextPaint.setAlpha(255);
+                } else {
+                    mTextPaint.setAlpha(192);
+                }
+                mPointPaint.setStrokeWidth(4);
+                canvas.drawPoint((mCanvasClipBounds.centerX() + (i - mPointCount / 2) * mPointMargin),
+                        mCanvasClipBounds.centerY(), mPointPaint);
+                mPointPaint.setStrokeWidth(2);
+                mTextPaint.setAlpha(100);
+            }
         }
 
-        if (mCurrentDegrees != 0) {
-            canvas.drawText("0°", getWidth() / 2 - mTextWidths[0] / 2 - mCurrentDegrees / 2 * mPointMargin,
-                    getHeight() / 2 - 10,
-                    mTextPaint);
-        }
+        drawDegreeText(0, canvas, true);
+        drawDegreeText(15, canvas, true);
+        drawDegreeText(30, canvas, true);
+        drawDegreeText(45, canvas, true);
+        drawDegreeText(-15, canvas, true);
+        drawDegreeText(-30, canvas, true);
+        drawDegreeText(-45, canvas, true);
 
-        canvas.drawText("15°", getWidth() / 2 + mPointMargin * 15 / 2 - mTextWidths[0] / 2 * 3 - mCurrentDegrees / 2 * mPointMargin,
-                getHeight() / 2 - 10,
-                mTextPaint);
-        canvas.drawText("30°", getWidth() / 2 + mPointMargin * 30 / 2 - mTextWidths[0] / 2 * 3 - mCurrentDegrees / 2 * mPointMargin,
-                getHeight() / 2 - 10,
-                mTextPaint);
-        canvas.drawText("45°", getWidth() / 2 + mPointMargin * 45 / 2 - mTextWidths[0] / 2 * 3 - mCurrentDegrees / 2 * mPointMargin,
-                getHeight() / 2 - 10,
-                mTextPaint);
-        canvas.drawText("60°", getWidth() / 2 + mPointMargin * 60 / 2 - mTextWidths[0] / 2 * 3 - mCurrentDegrees / 2 * mPointMargin,
-                getHeight() / 2 - 10,
-                mTextPaint);
-        canvas.drawText("75°", getWidth() / 2 + mPointMargin * 75 / 2 - mTextWidths[0] / 2 * 3 - mCurrentDegrees / 2 * mPointMargin,
-                getHeight() / 2 - 10,
-                mTextPaint);
-        canvas.drawText("90°", getWidth() / 2 + mPointMargin * 90 / 2 - mTextWidths[0] / 2 * 3 - mCurrentDegrees / 2 * mPointMargin,
-                getHeight() / 2 - 10,
-                mTextPaint);
-
-        canvas.drawText("-15°", getWidth() / 2 - mPointMargin * 15 / 2 - mTextWidths[0] / 2 * 2 - mCurrentDegrees / 2 * mPointMargin,
-                getHeight() / 2 - 10,
-                mTextPaint);
-        canvas.drawText("-30°", getWidth() / 2 - mPointMargin * 30 / 2 - mTextWidths[0] / 2 * 2 - mCurrentDegrees / 2 * mPointMargin,
-                getHeight() / 2 - 10,
-                mTextPaint);
-        canvas.drawText("-45°", getWidth() / 2 - mPointMargin * 45 / 2 - mTextWidths[0] / 2 * 2 - mCurrentDegrees / 2 * mPointMargin,
-                getHeight() / 2 - 10,
-                mTextPaint);
-        canvas.drawText("-60°", getWidth() / 2 - mPointMargin * 60 / 2 - mTextWidths[0] / 2 * 2 - mCurrentDegrees / 2 * mPointMargin,
-                getHeight() / 2 - 10,
-                mTextPaint);
-        canvas.drawText("-75°", getWidth() / 2 - mPointMargin * 75 / 2 - mTextWidths[0] / 2 * 2 - mCurrentDegrees / 2 * mPointMargin,
-                getHeight() / 2 - 10,
-                mTextPaint);
-        canvas.drawText("-90°", getWidth() / 2 - mPointMargin * 90 / 2 - mTextWidths[0] / 2 * 2 - mCurrentDegrees / 2 * mPointMargin,
-                getHeight() / 2 - 10,
-                mTextPaint);
+        drawDegreeText(60, canvas, false);
+        drawDegreeText(75, canvas, false);
+        drawDegreeText(90, canvas, false);
+        drawDegreeText(-60, canvas, false);
+        drawDegreeText(-76, canvas, false);
+        drawDegreeText(-90, canvas, false);
 
 
-        canvas.drawCircle(getWidth() / 2, getHeight() / 2, 36, mCirclePaint);
+        canvas.drawCircle(getWidth() / 2, getHeight() / 2, 16, mCirclePaint);
 
 
         mTextPaint.setTextSize(28f);
+        mTextPaint.setAlpha(255);
         if (mCurrentDegrees >= 10) {
             canvas.drawText(mCurrentDegrees + DEGREE, getWidth() / 2 - mTextWidths[0], mBaseLine, mTextPaint);
         } else if (mCurrentDegrees <= -10) {
@@ -220,7 +206,7 @@ public class DegreeSeekBar extends View {
         } else {
             canvas.drawText(mCurrentDegrees + DEGREE, getWidth() / 2 - mTextWidths[0] / 2, mBaseLine, mTextPaint);
         }
-
+        mTextPaint.setAlpha(100);
         mTextPaint.setTextSize(24f);
         //画中心三角
         mCirclePaint.setColor(Color.WHITE);
@@ -229,13 +215,42 @@ public class DegreeSeekBar extends View {
 
     }
 
+    private void drawDegreeText(int degrees, Canvas canvas, boolean canReach) {
+        if (canReach) {
+            if (mScrollStarted) {
+                mTextPaint.setAlpha(Math.min(255, Math.abs(degrees - mCurrentDegrees) * 255 / 15));
+                if (Math.abs(degrees - mCurrentDegrees) <= 5) {
+                    mTextPaint.setAlpha(0);
+                }
+            } else {
+                mTextPaint.setAlpha(100);
+                if (Math.abs(degrees - mCurrentDegrees) <= 5) {
+                    mTextPaint.setAlpha(0);
+                }
+            }
+        } else {
+            mTextPaint.setAlpha(100);
+        }
+        if (degrees == 0) {
+            canvas.drawText("0°", getWidth() / 2 - mTextWidths[0] / 2 - mCurrentDegrees / 2 * mPointMargin,
+                    getHeight() / 2 - 10,
+                    mTextPaint);
+        } else {
+            canvas.drawText(degrees + DEGREE,
+                    getWidth() / 2 + mPointMargin * degrees / 2 - mTextWidths[0] / 2 * 3 - mCurrentDegrees / 2 * mPointMargin,
+                    getHeight() / 2 - 10,
+                    mTextPaint);
+        }
+    }
+
+
     private void onScrollEvent(MotionEvent event, float distance) {
         mTotalScrollDistance -= distance;
         postInvalidate();
         mLastTouchedPosition = event.getX();
         if (mScrollingListener != null) {
             mScrollingListener.onScroll(-distance, mTotalScrollDistance);
-            mCurrentDegrees = (int) (mTotalScrollDistance * 2.1f) / mPointMargin;
+            mCurrentDegrees = (int) ((mTotalScrollDistance * 2.1f) / mPointMargin);
         }
     }
 
