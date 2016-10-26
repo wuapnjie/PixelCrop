@@ -171,7 +171,6 @@ public class Line {
         }
     }
 
-
     public Line getAttachLineStart() {
         return attachLineStart;
     }

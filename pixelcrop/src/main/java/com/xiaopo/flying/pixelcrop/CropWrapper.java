@@ -148,6 +148,9 @@ public class CropWrapper {
         mOutputPath = outputPath;
     }
 
+    /**
+     * This is not real scale
+     */
     public float getScaleFactor() {
         if (getWidth() >= getHeight()) {
             return getMappedWidth() / getWidth();

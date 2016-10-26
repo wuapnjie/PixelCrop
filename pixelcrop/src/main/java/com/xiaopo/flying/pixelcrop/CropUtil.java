@@ -97,7 +97,7 @@ class CropUtil {
         float[] unrotatedWrapperCorner = new float[8];
         float[] unrotateBorderCorner = new float[8];
         sTempMatrix.mapPoints(unrotatedWrapperCorner, cropWrapper.getMappedBoundPoints());
-        sTempMatrix.mapPoints(unrotateBorderCorner, cropBorder.cornerPoints);
+        sTempMatrix.mapPoints(unrotateBorderCorner, getCornersFromRect(cropBorder.getRect()));
 
         return CropUtil.trapToRect(unrotatedWrapperCorner).contains(CropUtil.trapToRect(unrotateBorderCorner));
     }

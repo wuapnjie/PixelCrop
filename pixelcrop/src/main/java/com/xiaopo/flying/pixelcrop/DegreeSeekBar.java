@@ -234,6 +234,9 @@ public class DegreeSeekBar extends View {
             mTextPaint.setAlpha(100);
         }
         if (degrees == 0) {
+            if (Math.abs(mCurrentDegrees) >= 15 && !mScrollStarted) {
+                mTextPaint.setAlpha(180);
+            }
             canvas.drawText(mDegreeTextArray.get(0), getWidth() / 2 - mTextWidths[0] / 2 - mCurrentDegrees / 2 * mPointMargin,
                     getHeight() / 2 - 10,
                     mTextPaint);

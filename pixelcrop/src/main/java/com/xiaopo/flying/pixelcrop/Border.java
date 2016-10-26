@@ -30,8 +30,6 @@ class Border {
 
     private RectF mRect = new RectF();
 
-    float[] cornerPoints = new float[8];
-
     Border(Border src) {
         lineLeft = src.lineLeft;
         lineTop = src.lineTop;
@@ -43,8 +41,6 @@ class Border {
         rightTop = src.lineRight.start;
         rightBottom = src.lineRight.end;
 
-        cornerPoints = src.cornerPoints;
-
         mRect.set(src.mRect);
     }
 
@@ -52,7 +48,7 @@ class Border {
         setBaseRect(baseRect);
     }
 
-    private void setBaseRect(RectF baseRect) {
+    void setBaseRect(RectF baseRect) {
 
         PointF one = new PointF(baseRect.left, baseRect.top);
         PointF two = new PointF(baseRect.right, baseRect.top);
@@ -69,14 +65,17 @@ class Border {
         rightTop = two;
         rightBottom = four;
 
-        cornerPoints[0] = one.x;
-        cornerPoints[1] = one.y;
-        cornerPoints[2] = two.x;
-        cornerPoints[3] = two.y;
-        cornerPoints[4] = three.x;
-        cornerPoints[5] = three.y;
-        cornerPoints[6] = four.x;
-        cornerPoints[7] = four.y;
+        lineLeft.setAttachLineStart(lineTop);
+        lineLeft.setAttachLineEnd(lineBottom);
+
+        lineTop.setAttachLineStart(lineLeft);
+        lineTop.setAttachLineEnd(lineRight);
+
+        lineRight.setAttachLineStart(lineTop);
+        lineRight.setAttachLineEnd(lineBottom);
+
+        lineBottom.setAttachLineStart(lineLeft);
+        lineBottom.setAttachLineEnd(lineRight);
 
     }
 
@@ -143,33 +142,18 @@ class Border {
     }
 
     public void drawCorner(Canvas canvas, Paint paint) {
-        canvas.drawLine(cornerPoints[0] - 1.5f, cornerPoints[1], cornerPoints[0] + 32 - 1.5f, cornerPoints[1], paint);
-        canvas.drawLine(cornerPoints[0], cornerPoints[1] - 1.5f, cornerPoints[0], cornerPoints[1] + 32 - 1.5f, paint);
+        canvas.drawLine(left() - 1.5f, top(), left() + 32 - 1.5f, top(), paint);
+        canvas.drawLine(left(), top() - 1.5f, left(), top() + 32 - 1.5f, paint);
 
-        canvas.drawLine(cornerPoints[2], cornerPoints[3], cornerPoints[2] - 32, cornerPoints[3], paint);
-        canvas.drawLine(cornerPoints[2] - 1.5f, cornerPoints[3] - 1.5f, cornerPoints[2] - 1.5f, cornerPoints[3] + 32, paint);
+        canvas.drawLine(right(), top(), right() - 32, top(), paint);
+        canvas.drawLine(right() - 1.5f, top() - 1.5f, right() - 1.5f, top() + 32, paint);
 
-        canvas.drawLine(cornerPoints[4], cornerPoints[5] - 1.5f, cornerPoints[4] + 32, cornerPoints[5] - 1.5f, paint);
-        canvas.drawLine(cornerPoints[4], cornerPoints[5], cornerPoints[4], cornerPoints[5] - 32, paint);
+        canvas.drawLine(left(), bottom() - 1.5f, left() + 32, bottom() - 1.5f, paint);
+        canvas.drawLine(left(), bottom(), left(), bottom() - 32, paint);
 
-        canvas.drawLine(cornerPoints[6], cornerPoints[7] - 1.5f, cornerPoints[6] - 32, cornerPoints[7] - 1.5f, paint);
-        canvas.drawLine(cornerPoints[6] - 1.5f, cornerPoints[7], cornerPoints[6] - 1.5f, cornerPoints[7] - 32, paint);
+        canvas.drawLine(right(), bottom() - 1.5f, right() - 32, bottom() - 1.5f, paint);
+        canvas.drawLine(right() - 1.5f, bottom(), right() - 1.5f, bottom() - 32, paint);
 
-
-    }
-
-    @Override
-    public String toString() {
-        return "left line:\n" +
-                lineLeft.toString() +
-                "\ntop line:\n" +
-                lineTop.toString() +
-                "\nright line:\n" +
-                lineRight.toString() +
-                "\nbottom line:\n" +
-                lineBottom.toString() +
-                "\nthe rect is \n" +
-                getRect().toString();
     }
 
 }

@@ -39,6 +39,7 @@ public class PixelCropView extends View {
         NONE,
         DRAG,
         ZOOM,
+        MOVE_LINE
     }
 
     private CropWrapper mCropWrapper;
@@ -68,6 +69,8 @@ public class PixelCropView extends View {
     //不同旋转角度下的最小缩放比
     private float mMinScale;
     private int mMaxBitmapSize;
+
+    private Line mHandlingLine;
 
     public PixelCropView(Context context) {
         this(context, null, 0);
@@ -100,6 +103,8 @@ public class PixelCropView extends View {
                 w - mBorderOffset,
                 w - mBorderOffset));
 
+        setUpCropBorderLineInfo();
+
         if (mCropWrapper != null) {
             setUpDefaultCropBorder();
 
@@ -109,6 +114,21 @@ public class PixelCropView extends View {
             mPreMatrix.set(mCropWrapper.getMatrix());
             mPreSizeMatrix.set(mCropWrapper.getMatrix());
         }
+
+    }
+
+    private void setUpCropBorderLineInfo() {
+        mCropBorder.lineTop.setLowerLine(mOuterBorder.lineTop);
+        mCropBorder.lineTop.setUpperLine(mCropBorder.lineBottom);
+
+        mCropBorder.lineBottom.setLowerLine(mCropBorder.lineTop);
+        mCropBorder.lineBottom.setUpperLine(mOuterBorder.lineBottom);
+
+        mCropBorder.lineLeft.setLowerLine(mOuterBorder.lineLeft);
+        mCropBorder.lineLeft.setUpperLine(mCropBorder.lineRight);
+
+        mCropBorder.lineRight.setLowerLine(mCropBorder.lineLeft);
+        mCropBorder.lineRight.setUpperLine(mOuterBorder.lineRight);
 
     }
 
@@ -124,7 +144,7 @@ public class PixelCropView extends View {
             if (width >= height) {
                 float bWidth = w - 2 * mBorderOffset;
                 float bHeight = bWidth * height / width;
-                mCropBorder = new Border(new RectF(
+                mCropBorder.setBaseRect(new RectF(
                         mBorderOffset,
                         (h - bHeight) / 2,
                         w - mBorderOffset,
@@ -133,7 +153,7 @@ public class PixelCropView extends View {
             } else {
                 float bHeight = h - 2 * mBorderOffset;
                 float bWidth = bHeight * width / height;
-                mCropBorder = new Border(new RectF(
+                mCropBorder.setBaseRect(new RectF(
                         (w - bWidth) / 2,
                         mBorderOffset,
                         (w + bWidth) / 2,
@@ -191,17 +211,24 @@ public class PixelCropView extends View {
                 mDownX = event.getX();
                 mDownY = event.getY();
 
+                mHandlingLine = findHandlingLine();
+
+                if (mHandlingLine != null) {
+                    mCurrentMode = ActionMode.MOVE_LINE;
+                } else {
+                    if (!mIsRotateState) {
+                        mCurrentMode = ActionMode.DRAG;
+                    } else {
+                        mCurrentMode = ActionMode.NONE;
+                    }
+                }
 
                 if (mCropWrapper != null) {
                     mPreMatrix.set(mCropWrapper.getMatrix());
                     mDownCenterPoint = mCropWrapper.getMappedCenterPoint();
                 }
 
-                if (!mIsRotateState) {
-                    mCurrentMode = ActionMode.DRAG;
-                } else {
-                    mCurrentMode = ActionMode.NONE;
-                }
+
                 break;
 
             case MotionEvent.ACTION_POINTER_DOWN:
@@ -226,6 +253,9 @@ public class PixelCropView extends View {
                     case ZOOM:
                         handleZoomEvent(event);
                         break;
+                    case MOVE_LINE:
+                        handleMoveLineEvent(event);
+                        break;
                 }
                 invalidate();
                 break;
@@ -245,12 +275,41 @@ public class PixelCropView extends View {
 
                 PointF currentCenterPoint = mCropWrapper.getMappedCenterPoint();
                 mPreSizeMatrix.postTranslate(currentCenterPoint.x - mDownCenterPoint.x, currentCenterPoint.y - mDownCenterPoint.y);
-                Log.d(TAG, "onTouchEvent: current-->" + currentCenterPoint.toString());
 
                 break;
         }
 
         return true;
+    }
+
+    private void handleMoveLineEvent(MotionEvent event) {
+        if (mHandlingLine == null) {
+            return;
+        }
+
+        if (mHandlingLine.getDirection() == Line.Direction.HORIZONTAL) {
+            mHandlingLine.moveTo(event.getY(), mBorderOffset);
+        } else if (mHandlingLine.getDirection() == Line.Direction.VERTICAL) {
+            mHandlingLine.moveTo(event.getX(), mBorderOffset);
+        }
+
+        letBorderInImage(event.getX(), event.getY());
+    }
+
+    private void letBorderInImage(float x, float y) {
+        if (mHandlingLine == null) return;
+        if (!isImageContainsBorder()) {
+            Log.d(TAG, "letBorderInImage: -->");
+            final float[] imageIndents = CropUtil.calculateImageIndents(mCropWrapper, mCropBorder);
+            float deltaX = -(imageIndents[0] + imageIndents[2]);
+            float deltaY = -(imageIndents[1] + imageIndents[3]);
+
+            if (mHandlingLine.getDirection() == Line.Direction.HORIZONTAL) {
+                mHandlingLine.moveTo(y - deltaY, mBorderOffset);
+            } else {
+                mHandlingLine.moveTo(x - deltaX, mBorderOffset);
+            }
+        }
     }
 
     private void handleZoomEvent(MotionEvent event) {
@@ -291,6 +350,16 @@ public class PixelCropView extends View {
 
         letImageContainsBorder(event.getX() - mDownX, event.getY() - mDownY, mPreMatrix);
 
+    }
+
+    private Line findHandlingLine() {
+        if (mCropBorder == null) return null;
+        for (Line line : mCropBorder.getLines()) {
+            if (line.contains(mDownX, mDownY, 30)) {
+                return line;
+            }
+        }
+        return null;
     }
 
     private void letImageContainsBorder(float preX, float preY, Matrix preMatrix) {
@@ -478,6 +547,7 @@ public class PixelCropView extends View {
                         mCropWrapper = new CropWrapper(new BitmapDrawable(getResources(), bitmap), new Matrix(), imageInputPath, imageOutputPath, exifInfo);
 
                         setUpDefaultCropBorder();
+                        setUpCropBorderLineInfo();
 
                         letWrapperToFitBorder();
                         mPreMatrix.set(mCropWrapper.getMatrix());
