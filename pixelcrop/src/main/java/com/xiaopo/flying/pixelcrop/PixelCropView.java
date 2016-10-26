@@ -42,8 +42,10 @@ public class PixelCropView extends View {
     }
 
     private CropWrapper mCropWrapper;
-    private int mBorderOffset = 50;
+    private int mBorderOffset = 30;
+    private int mBorderColor = Color.parseColor("#ddcbcbcb");
     private Paint mBorderPaint;
+    private Border mOuterBorder;
     private Border mCropBorder;
 
     private float mDownX;
@@ -67,14 +69,16 @@ public class PixelCropView extends View {
     private float mMinScale;
     private int mMaxBitmapSize;
 
-    private int mBorderColor = Color.parseColor("#ddcbcbcb");
-
     public PixelCropView(Context context) {
-        super(context);
+        this(context, null, 0);
     }
 
     public PixelCropView(Context context, AttributeSet attrs) {
-        super(context, attrs);
+        this(context, attrs, 0);
+    }
+
+    public PixelCropView(Context context, AttributeSet attrs, int defStyleAttr) {
+        super(context, attrs, defStyleAttr);
         mBorderPaint = new Paint();
         mBorderPaint.setStyle(Paint.Style.STROKE);
         mBorderPaint.setColor(mBorderColor);
@@ -86,23 +90,21 @@ public class PixelCropView extends View {
         mScalePoint = new PointF();
     }
 
-    public PixelCropView(Context context, AttributeSet attrs, int defStyleAttr) {
-        super(context, attrs, defStyleAttr);
-    }
-
     @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
         super.onSizeChanged(w, h, oldw, oldh);
+        mOuterBorder = new Border(new RectF(0, 0, w, w * 6 / 5));
+
         mCropBorder = new Border(new RectF(mBorderOffset,
                 mBorderOffset,
                 w - mBorderOffset,
                 w - mBorderOffset));
 
         if (mCropWrapper != null) {
-            setUpDefaultCropBorder(w, h);
+            setUpDefaultCropBorder();
 
             //使图片移动缩放至剪裁框内
-            setWrapperToFitBorder();
+            letWrapperToFitBorder();
 
             mPreMatrix.set(mCropWrapper.getMatrix());
             mPreSizeMatrix.set(mCropWrapper.getMatrix());
@@ -111,28 +113,31 @@ public class PixelCropView extends View {
     }
 
     //根据图片的长宽比确定剪裁边框的大小
-    private void setUpDefaultCropBorder(int w, int h) {
+    private void setUpDefaultCropBorder() {
         if (mCropWrapper != null) {
             int width = mCropWrapper.getWidth();
             int height = mCropWrapper.getHeight();
 
-            if (width > height) {
-                int bWidth = w - 2 * mBorderOffset;
-                int bHeight = bWidth * height / width;
+            float w = mOuterBorder.width();
+            float h = mOuterBorder.height();
+
+            if (width >= height) {
+                float bWidth = w - 2 * mBorderOffset;
+                float bHeight = bWidth * height / width;
                 mCropBorder = new Border(new RectF(
                         mBorderOffset,
-                        (w - bHeight) / 2,
+                        (h - bHeight) / 2,
                         w - mBorderOffset,
-                        (w + bHeight) / 2
+                        (h + bHeight) / 2
                 ));
             } else {
-                int bHeight = w - 2 * mBorderOffset;
-                int bWidth = bHeight * width / height;
+                float bHeight = h - 2 * mBorderOffset;
+                float bWidth = bHeight * width / height;
                 mCropBorder = new Border(new RectF(
                         (w - bWidth) / 2,
                         mBorderOffset,
                         (w + bWidth) / 2,
-                        w - mBorderOffset
+                        h - mBorderOffset
                 ));
             }
         }
@@ -142,7 +147,6 @@ public class PixelCropView extends View {
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
-
         //画边框和阴影
         if (mCropBorder != null && mCropWrapper != null) {
 
@@ -188,13 +192,11 @@ public class PixelCropView extends View {
                 mDownY = event.getY();
 
                 mDownCenterPoint = mCropWrapper.getMappedCenterPoint();
-                Log.d(TAG, "onTouchEvent: down-->" + mDownCenterPoint.toString());
 
                 if (mCropWrapper != null) {
                     mPreMatrix.set(mCropWrapper.getMatrix());
                 }
 
-                //TODO 判断手指按下的位置确定ActionMode
                 if (!mIsRotateState) {
                     mCurrentMode = ActionMode.DRAG;
                 } else {
@@ -307,7 +309,6 @@ public class PixelCropView extends View {
         return CropUtil.judgeIsImageContainsBorder(mCropWrapper, mCropBorder, mRotateDegree);
     }
 
-    //TODO
     public void rotate(int degrees) {
         if (mCropWrapper == null) return;
 
@@ -385,9 +386,9 @@ public class PixelCropView extends View {
     }
 
 
-    private void setWrapperToFitBorder() {
-        int offsetX = getWidth() / 2 - mCropWrapper.getWidth() / 2;
-        int offsetY = getWidth() / 2 - mCropWrapper.getHeight() / 2;
+    private void letWrapperToFitBorder() {
+        float offsetX = mOuterBorder.centerX() - mCropWrapper.getCenterPoint().x;
+        float offsetY = mOuterBorder.centerY() - mCropWrapper.getCenterPoint().y;
 
         if (mCropWrapper != null) {
             mCropWrapper.getMatrix()
@@ -476,19 +477,13 @@ public class PixelCropView extends View {
 
                         mCropWrapper = new CropWrapper(new BitmapDrawable(getResources(), bitmap), new Matrix(), imageInputPath, imageOutputPath, exifInfo);
 
-                        setUpDefaultCropBorder(getMeasuredWidth(), getMeasuredHeight());
+                        setUpDefaultCropBorder();
 
-                        setWrapperToFitBorder();
+                        letWrapperToFitBorder();
                         mPreMatrix.set(mCropWrapper.getMatrix());
                         mPreSizeMatrix.set(mCropWrapper.getMatrix());
 
                         invalidate();
-//                        mImageInputPath = imageInputPath;
-//                        mImageOutputPath = imageOutputPath;
-//                        mExifInfo = exifInfo;
-
-//                        mBitmapDecoded = true;
-//                        setImageBitmap(bitmap);
                     }
 
                     @Override

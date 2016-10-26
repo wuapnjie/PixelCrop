@@ -20,8 +20,6 @@ import static java.lang.Math.toRadians;
  * Created by snowbean on 16-10-15.
  */
 class CropUtil {
-    private static final String TAG = "CropUtil";
-
     private static Matrix sTempMatrix = new Matrix();
 
     //计算不同旋转角度下的最小缩放值

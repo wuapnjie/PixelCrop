@@ -124,25 +124,12 @@ public class CropWrapper {
         return mMatrix;
     }
 
-    public void setMatrix(Matrix matrix) {
-        mMatrix = matrix;
-    }
-
     public Rect getRealBound() {
         return mRealBound;
     }
 
     public void setRealBound(Rect realBound) {
         mRealBound = realBound;
-    }
-
-    public float getTranslateX() {
-        return getMappedCenterPoint().x - getCenterPoint().x;
-    }
-
-
-    public float getTranslateY() {
-        return getMappedCenterPoint().y - getCenterPoint().y;
     }
 
     public String getInputPath() {
