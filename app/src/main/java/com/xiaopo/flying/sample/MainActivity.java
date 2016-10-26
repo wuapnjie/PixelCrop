@@ -2,7 +2,6 @@ package com.xiaopo.flying.sample;
 
 import android.content.Intent;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
@@ -25,17 +24,17 @@ import java.util.Calendar;
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
-    PixelCropView mPixelCropView;
+    private PixelCropView mPixelCropView;
+    private DegreeSeekBar mSeekBar;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         mPixelCropView = (PixelCropView) findViewById(R.id.pixel_crop_view);
-        Bitmap bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.demo);
 
-        DegreeSeekBar seekBar = (DegreeSeekBar) findViewById(R.id.seek_bar);
-        seekBar.setScrollingListener(new DegreeSeekBar.ScrollingListener() {
+        mSeekBar = (DegreeSeekBar) findViewById(R.id.seek_bar);
+        mSeekBar.setScrollingListener(new DegreeSeekBar.ScrollingListener() {
             @Override
             public void onScrollStart() {
                 mPixelCropView.setRotateState(true);
@@ -80,10 +79,8 @@ public class MainActivity extends AppCompatActivity {
         if (resultCode == RESULT_OK && requestCode == Define.DEFAULT_REQUEST_CODE) {
             //to get path of the selected photos
             List<String> paths = data.getStringArrayListExtra(Define.PATHS);
-
-            Bitmap bitmap = BitmapFactory.decodeFile(paths.get(0));
-
             File newFile = FileUtils.getNewFile(this, "PixelCrop");
+            mSeekBar.setCurrentDegrees(0);
 
             System.out.println(newFile.getPath());
 

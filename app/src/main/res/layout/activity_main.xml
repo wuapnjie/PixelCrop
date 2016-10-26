@@ -22,11 +22,34 @@
         android:gravity="center"
         android:orientation="vertical">
 
-        <com.xiaopo.flying.pixelcrop.DegreeSeekBar
-            android:id="@+id/seek_bar"
-            android:layout_width="180dp"
-            android:layout_height="50dp"
-            android:layout_gravity="center" />
+        <FrameLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <ImageView
+                android:layout_width="80dp"
+                android:layout_height="wrap_content"
+                android:layout_gravity="start|center_vertical"
+                android:background="?attr/selectableItemBackground"
+                android:padding="4dp"
+                android:scaleType="center"
+                android:src="@drawable/ic_image_aspect_ratio_white_24dp" />
+
+            <ImageView
+                android:layout_width="80dp"
+                android:layout_height="wrap_content"
+                android:layout_gravity="end|center_vertical"
+                android:background="?attr/selectableItemBackground"
+                android:padding="4dp"
+                android:scaleType="center"
+                android:src="@drawable/ic_rotate_90_degrees_ccw_white_24dp" />
+
+            <com.xiaopo.flying.pixelcrop.DegreeSeekBar
+                android:id="@+id/seek_bar"
+                android:layout_width="180dp"
+                android:layout_height="50dp"
+                android:layout_gravity="center" />
+        </FrameLayout>
 
         <View
             android:layout_width="match_parent"

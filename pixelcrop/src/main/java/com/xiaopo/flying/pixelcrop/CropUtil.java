@@ -29,7 +29,7 @@ class CropUtil {
             float borderWidth = cropBorder.width();
             float borderHeight = cropBorder.height();
 
-            float mDiagonal = (float) sqrt(pow(borderWidth, 2) + pow(borderHeight, 2));
+            double mDiagonal = sqrt(pow(borderWidth, 2) + pow(borderHeight, 2));
 
             if (borderWidth > borderHeight) {
                 double tempAlpha = atan(borderHeight / borderWidth);
@@ -57,7 +57,7 @@ class CropUtil {
     //计算旋转缩放值
     static float calculateRotateScale(float borderWidth, float borderHeight, float degrees) {
 
-        double mDiagonal = (float) sqrt(pow(borderWidth, 2) + pow(borderHeight, 2));
+        double mDiagonal = sqrt(pow(borderWidth, 2) + pow(borderHeight, 2));
 
         if (borderWidth > borderHeight) {
             double tempAlpha = atan(borderHeight / borderWidth);

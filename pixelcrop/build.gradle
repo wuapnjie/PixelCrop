@@ -18,6 +18,8 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+
+    resourcePrefix 'pixelcrop_'
 //    sourceSets.main {
 //        jniLibs.srcDirs = ['src/main/jniLibs']
 //    }

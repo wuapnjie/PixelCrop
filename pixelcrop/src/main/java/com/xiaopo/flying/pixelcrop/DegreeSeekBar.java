@@ -9,6 +9,7 @@ import android.graphics.Path;
 import android.graphics.Rect;
 import android.os.Build;
 import android.util.AttributeSet;
+import android.util.SparseArray;
 import android.view.MotionEvent;
 import android.view.View;
 
@@ -38,8 +39,8 @@ public class DegreeSeekBar extends View {
     private Path mIndicatorPath = new Path();
 
     private int mCurrentDegrees = 0;
-    private static final String DEGREE = "°";
     private int mPointCount = 51;
+    private SparseArray<String> mDegreeTextArray = new SparseArray<>();
 
     public DegreeSeekBar(Context context) {
         this(context, null);
@@ -83,6 +84,10 @@ public class DegreeSeekBar extends View {
         mCirclePaint.setAlpha(255);
         mCirclePaint.setAntiAlias(true);
 
+
+        for (int i = -90; i <= 90; i++) {
+            mDegreeTextArray.append(i, i + "°");
+        }
     }
 
     @Override
@@ -189,19 +194,19 @@ public class DegreeSeekBar extends View {
         drawDegreeText(75, canvas, false);
         drawDegreeText(90, canvas, false);
         drawDegreeText(-60, canvas, false);
-        drawDegreeText(-76, canvas, false);
+        drawDegreeText(-75, canvas, false);
         drawDegreeText(-90, canvas, false);
 
         mTextPaint.setTextSize(28f);
         mTextPaint.setAlpha(255);
         if (mCurrentDegrees >= 10) {
-            canvas.drawText(mCurrentDegrees + DEGREE, getWidth() / 2 - mTextWidths[0], mBaseLine, mTextPaint);
+            canvas.drawText(mDegreeTextArray.get(mCurrentDegrees), getWidth() / 2 - mTextWidths[0], mBaseLine, mTextPaint);
         } else if (mCurrentDegrees <= -10) {
-            canvas.drawText(mCurrentDegrees + DEGREE, getWidth() / 2 - mTextWidths[0] / 2 * 3, mBaseLine, mTextPaint);
+            canvas.drawText(mDegreeTextArray.get(mCurrentDegrees), getWidth() / 2 - mTextWidths[0] / 2 * 3, mBaseLine, mTextPaint);
         } else if (mCurrentDegrees < 0) {
-            canvas.drawText(mCurrentDegrees + DEGREE, getWidth() / 2 - mTextWidths[0], mBaseLine, mTextPaint);
+            canvas.drawText(mDegreeTextArray.get(mCurrentDegrees), getWidth() / 2 - mTextWidths[0], mBaseLine, mTextPaint);
         } else {
-            canvas.drawText(mCurrentDegrees + DEGREE, getWidth() / 2 - mTextWidths[0] / 2, mBaseLine, mTextPaint);
+            canvas.drawText(mDegreeTextArray.get(mCurrentDegrees), getWidth() / 2 - mTextWidths[0] / 2, mBaseLine, mTextPaint);
         }
         mTextPaint.setAlpha(100);
         mTextPaint.setTextSize(24f);
@@ -229,11 +234,11 @@ public class DegreeSeekBar extends View {
             mTextPaint.setAlpha(100);
         }
         if (degrees == 0) {
-            canvas.drawText("0°", getWidth() / 2 - mTextWidths[0] / 2 - mCurrentDegrees / 2 * mPointMargin,
+            canvas.drawText(mDegreeTextArray.get(0), getWidth() / 2 - mTextWidths[0] / 2 - mCurrentDegrees / 2 * mPointMargin,
                     getHeight() / 2 - 10,
                     mTextPaint);
         } else {
-            canvas.drawText(degrees + DEGREE,
+            canvas.drawText(mDegreeTextArray.get(degrees),
                     getWidth() / 2 + mPointMargin * degrees / 2 - mTextWidths[0] / 2 * 3 - mCurrentDegrees / 2 * mPointMargin,
                     getHeight() / 2 - 10,
                     mTextPaint);
@@ -249,6 +254,12 @@ public class DegreeSeekBar extends View {
             mCurrentDegrees = (int) ((mTotalScrollDistance * 2.1f) / mPointMargin);
             mScrollingListener.onScroll(mCurrentDegrees);
         }
+    }
+
+    public void setCurrentDegrees(int degrees) {
+        mCurrentDegrees = degrees;
+        mTotalScrollDistance = 0;
+        invalidate();
     }
 
     public void setScrollingListener(ScrollingListener scrollingListener) {

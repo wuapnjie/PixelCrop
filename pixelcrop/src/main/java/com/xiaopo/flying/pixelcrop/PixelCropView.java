@@ -191,10 +191,10 @@ public class PixelCropView extends View {
                 mDownX = event.getX();
                 mDownY = event.getY();
 
-                mDownCenterPoint = mCropWrapper.getMappedCenterPoint();
 
                 if (mCropWrapper != null) {
                     mPreMatrix.set(mCropWrapper.getMatrix());
+                    mDownCenterPoint = mCropWrapper.getMappedCenterPoint();
                 }
 
                 if (!mIsRotateState) {
