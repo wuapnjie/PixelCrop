@@ -1,7 +1,5 @@
 package com.xiaopo.flying.sample;
 
-import android.app.NotificationManager;
-import android.app.PendingIntent;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -9,12 +7,11 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.support.annotation.NonNull;
-import android.support.v4.app.NotificationCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
-import android.widget.SeekBar;
 import android.widget.Toast;
 
+import com.xiaopo.flying.pixelcrop.DegreeSeekBar;
 import com.xiaopo.flying.pixelcrop.PixelCropView;
 import com.xiaopo.flying.poiphoto.Define;
 import com.xiaopo.flying.poiphoto.PhotoPicker;
@@ -37,22 +34,20 @@ public class MainActivity extends AppCompatActivity {
         mPixelCropView = (PixelCropView) findViewById(R.id.pixel_crop_view);
         Bitmap bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.demo);
 
-        SeekBar seekBar = (SeekBar) findViewById(R.id.seekbar);
-        seekBar.setMax(90);
-        seekBar.setProgress(45);
-        seekBar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+        DegreeSeekBar seekBar = (DegreeSeekBar) findViewById(R.id.seek_bar);
+        seekBar.setScrollingListener(new DegreeSeekBar.ScrollingListener() {
             @Override
-            public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-                mPixelCropView.rotate(progress - 45);
-            }
-
-            @Override
-            public void onStartTrackingTouch(SeekBar seekBar) {
+            public void onScrollStart() {
                 mPixelCropView.setRotateState(true);
             }
 
             @Override
-            public void onStopTrackingTouch(SeekBar seekBar) {
+            public void onScroll(int currentDegrees) {
+                mPixelCropView.rotate(currentDegrees);
+            }
+
+            @Override
+            public void onScrollEnd() {
                 mPixelCropView.setRotateState(false);
             }
         });
@@ -66,7 +61,6 @@ public class MainActivity extends AppCompatActivity {
 
 
     public void crop(View view) {
-        System.out.println("Hello");
         mPixelCropView.cropAndSaveImage(Bitmap.CompressFormat.JPEG, 90, new BitmapCropCallback() {
             @Override
             public void onBitmapCropped(@NonNull Uri resultUri, int imageWidth, int imageHeight) {
@@ -93,7 +87,7 @@ public class MainActivity extends AppCompatActivity {
 
             System.out.println(newFile.getPath());
 
-            mPixelCropView.setCropUri(Uri.parse("file:///"+paths.get(0)), Uri.parse("file:///"+newFile.getAbsolutePath()));
+            mPixelCropView.setCropUri(Uri.parse("file:///" + paths.get(0)), Uri.parse("file:///" + newFile.getAbsolutePath()));
         }
     }
 

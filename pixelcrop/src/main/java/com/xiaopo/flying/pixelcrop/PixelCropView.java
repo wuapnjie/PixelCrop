@@ -180,6 +180,7 @@ public class PixelCropView extends View {
 
     @Override
     public boolean onTouchEvent(MotionEvent event) {
+        if (mCropWrapper == null) return super.onTouchEvent(event);
         final int action = MotionEventCompat.getActionMasked(event);
         switch (action) {
             case MotionEvent.ACTION_DOWN:
@@ -194,7 +195,11 @@ public class PixelCropView extends View {
                 }
 
                 //TODO 判断手指按下的位置确定ActionMode
-                mCurrentMode = ActionMode.DRAG;
+                if (!mIsRotateState) {
+                    mCurrentMode = ActionMode.DRAG;
+                } else {
+                    mCurrentMode = ActionMode.NONE;
+                }
                 break;
 
             case MotionEvent.ACTION_POINTER_DOWN:
@@ -203,7 +208,7 @@ public class PixelCropView extends View {
 
                 mPreZoom = mCropWrapper.getScaleFactor();
 
-                if (event.getPointerCount() == 2) {
+                if (event.getPointerCount() == 2 && !mIsRotateState) {
                     mCurrentMode = ActionMode.ZOOM;
                 }
 
@@ -304,6 +309,8 @@ public class PixelCropView extends View {
 
     //TODO
     public void rotate(int degrees) {
+        if (mCropWrapper == null) return;
+
         mRotateDegree = degrees;
 
         if (degrees > 0) {
@@ -434,6 +441,11 @@ public class PixelCropView extends View {
      */
     public void cropAndSaveImage(@NonNull Bitmap.CompressFormat compressFormat, int compressQuality,
                                  @Nullable BitmapCropCallback cropCallback) {
+        if (mCropWrapper == null && cropCallback != null) {
+            cropCallback.onCropFailure(new NullPointerException("The CropWrapper is null"));
+            return;
+        }
+
         letImageContainsBorder(0, 0, null);
 
         final ImageState imageState = new ImageState(

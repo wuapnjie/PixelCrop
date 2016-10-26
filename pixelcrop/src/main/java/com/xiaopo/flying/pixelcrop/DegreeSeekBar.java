@@ -13,6 +13,7 @@ import android.view.MotionEvent;
 import android.view.View;
 
 /**
+ * //TODO 支持wrap_content和padding
  * Created by snowbean on 16-10-24.
  */
 public class DegreeSeekBar extends View {
@@ -191,10 +192,6 @@ public class DegreeSeekBar extends View {
         drawDegreeText(-76, canvas, false);
         drawDegreeText(-90, canvas, false);
 
-
-        canvas.drawCircle(getWidth() / 2, getHeight() / 2, 16, mCirclePaint);
-
-
         mTextPaint.setTextSize(28f);
         mTextPaint.setAlpha(255);
         if (mCurrentDegrees >= 10) {
@@ -219,12 +216,12 @@ public class DegreeSeekBar extends View {
         if (canReach) {
             if (mScrollStarted) {
                 mTextPaint.setAlpha(Math.min(255, Math.abs(degrees - mCurrentDegrees) * 255 / 15));
-                if (Math.abs(degrees - mCurrentDegrees) <= 5) {
+                if (Math.abs(degrees - mCurrentDegrees) <= 7) {
                     mTextPaint.setAlpha(0);
                 }
             } else {
                 mTextPaint.setAlpha(100);
-                if (Math.abs(degrees - mCurrentDegrees) <= 5) {
+                if (Math.abs(degrees - mCurrentDegrees) <= 7) {
                     mTextPaint.setAlpha(0);
                 }
             }
@@ -249,8 +246,8 @@ public class DegreeSeekBar extends View {
         postInvalidate();
         mLastTouchedPosition = event.getX();
         if (mScrollingListener != null) {
-            mScrollingListener.onScroll(-distance, mTotalScrollDistance);
             mCurrentDegrees = (int) ((mTotalScrollDistance * 2.1f) / mPointMargin);
+            mScrollingListener.onScroll(mCurrentDegrees);
         }
     }
 
@@ -262,7 +259,7 @@ public class DegreeSeekBar extends View {
 
         void onScrollStart();
 
-        void onScroll(float delta, float totalDistance);
+        void onScroll(int currentDegrees);
 
         void onScrollEnd();
     }

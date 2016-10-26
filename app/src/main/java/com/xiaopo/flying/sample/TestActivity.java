@@ -21,10 +21,10 @@ public class TestActivity extends AppCompatActivity {
             }
 
             @Override
-            public void onScroll(float delta, float totalDistance) {
-//                Log.d("seekbar", "onScroll: delta-->" + delta);
-//                Log.d("seekbar", "onScroll: totalDistance-->"+totalDistance);
+            public void onScroll(int currentDegrees) {
+
             }
+
 
             @Override
             public void onScrollEnd() {
