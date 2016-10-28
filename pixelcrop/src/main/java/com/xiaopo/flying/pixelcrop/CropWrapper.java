@@ -14,7 +14,7 @@ import com.yalantis.ucrop.task.ExifInfo;
 /**
  * Created by snowbean on 16-10-14.
  */
-public class CropWrapper {
+class CropWrapper {
     private static final String TAG = "CropWrapper";
     private Drawable mDrawable;
     private Matrix mMatrix;
@@ -29,7 +29,7 @@ public class CropWrapper {
 
 
 
-    public CropWrapper(Drawable drawable, Matrix matrix, String inputPath, String outputPath, ExifInfo exifInfo) {
+    CropWrapper(Drawable drawable, Matrix matrix, String inputPath, String outputPath, ExifInfo exifInfo) {
         mDrawable = drawable;
         mMatrix = matrix;
         mInputPath = inputPath;
@@ -38,7 +38,7 @@ public class CropWrapper {
         mRealBound = new Rect(0, 0, getWidth(), getHeight());
     }
 
-    public void draw(Canvas canvas, int alpha) {
+    void draw(Canvas canvas, int alpha) {
         canvas.save();
         canvas.concat(mMatrix);
         mDrawable.setBounds(mRealBound);
@@ -47,11 +47,11 @@ public class CropWrapper {
         canvas.restore();
     }
 
-    public void draw(Canvas canvas) {
+    void draw(Canvas canvas) {
         draw(canvas, 255);
     }
 
-    public float[] getBoundPoints() {
+    float[] getBoundPoints() {
         return new float[]{
                 0f, 0f,
                 getWidth(), 0f,
@@ -60,33 +60,33 @@ public class CropWrapper {
         };
     }
 
-    public float[] getMappedBoundPoints() {
+    float[] getMappedBoundPoints() {
         float[] dst = new float[8];
         mMatrix.mapPoints(dst, getBoundPoints());
         return dst;
     }
 
-    public float[] getMappedPoints(float[] src) {
+    float[] getMappedPoints(float[] src) {
         float[] dst = new float[src.length];
         mMatrix.mapPoints(dst, src);
         return dst;
     }
 
 
-    public RectF getBound() {
+    RectF getBound() {
         return new RectF(0, 0, getWidth(), getHeight());
     }
 
-    public RectF getMappedBound() {
+    RectF getMappedBound() {
         mMatrix.mapRect(mMappedBound, getBound());
         return mMappedBound;
     }
 
-    public PointF getCenterPoint() {
+    PointF getCenterPoint() {
         return new PointF(getWidth() / 2, getHeight() / 2);
     }
 
-    public PointF getMappedCenterPoint() {
+    PointF getMappedCenterPoint() {
         PointF pointF = getCenterPoint();
         float[] dst = getMappedPoints(new float[]{
                 pointF.x,
@@ -95,63 +95,63 @@ public class CropWrapper {
         return new PointF(dst[0], dst[1]);
     }
 
-    public float getMappedWidth() {
+    float getMappedWidth() {
         return getMappedBound().width();
     }
 
-    public float getMappedHeight() {
+    float getMappedHeight() {
         return getMappedBound().height();
     }
 
 
-    public int getWidth() {
+    int getWidth() {
         return mDrawable.getIntrinsicWidth();
     }
 
-    public int getHeight() {
+    int getHeight() {
         return mDrawable.getIntrinsicHeight();
     }
 
-    public Drawable getDrawable() {
+    Drawable getDrawable() {
         return mDrawable;
     }
 
-    public void setDrawable(Drawable drawable) {
+    void setDrawable(Drawable drawable) {
         mDrawable = drawable;
     }
 
-    public Matrix getMatrix() {
+    Matrix getMatrix() {
         return mMatrix;
     }
 
-    public Rect getRealBound() {
+    Rect getRealBound() {
         return mRealBound;
     }
 
-    public void setRealBound(Rect realBound) {
+    void setRealBound(Rect realBound) {
         mRealBound = realBound;
     }
 
-    public String getInputPath() {
+    String getInputPath() {
         return mInputPath;
     }
 
-    public void setInputPath(String inputPath) {
+    void setInputPath(String inputPath) {
         mInputPath = inputPath;
     }
 
-    public String getOutputPath() {
+    String getOutputPath() {
         return mOutputPath;
     }
 
-    public void setOutputPath(String outputPath) {
+    void setOutputPath(String outputPath) {
         mOutputPath = outputPath;
     }
 
     /**
      * This is not real scale
      */
-    public float getScaleFactor() {
+    float getScaleFactor() {
         if (getWidth() >= getHeight()) {
             return getMappedWidth() / getWidth();
         } else {
@@ -163,14 +163,14 @@ public class CropWrapper {
      * @return - current image scale value.
      * [1.0f - for original image, 2.0f - for 200% scaled image, etc.]
      */
-    public float getCurrentScale() {
+    float getCurrentScale() {
         return getMatrixScale(mMatrix);
     }
 
     /**
      * This method calculates scale value for given Matrix object.
      */
-    public float getMatrixScale(@NonNull Matrix matrix) {
+    private float getMatrixScale(@NonNull Matrix matrix) {
         return (float) Math.sqrt(Math.pow(getMatrixValue(matrix, Matrix.MSCALE_X), 2)
                 + Math.pow(getMatrixValue(matrix, Matrix.MSKEW_Y), 2));
     }
@@ -178,28 +178,28 @@ public class CropWrapper {
     /**
      * @return - current image rotation angle.
      */
-    public float getCurrentAngle() {
+    float getCurrentAngle() {
         return getMatrixAngle(mMatrix);
     }
 
     /**
      * This method calculates rotation angle for given Matrix object.
      */
-    public float getMatrixAngle(@NonNull Matrix matrix) {
+    private float getMatrixAngle(@NonNull Matrix matrix) {
         return (float) -(Math.atan2(getMatrixValue(matrix, Matrix.MSKEW_X),
                 getMatrixValue(matrix, Matrix.MSCALE_X)) * (180 / Math.PI));
     }
 
-    protected float getMatrixValue(@NonNull Matrix matrix, @IntRange(from = 0, to = 9) int valueIndex) {
+    private float getMatrixValue(@NonNull Matrix matrix, @IntRange(from = 0, to = 9) int valueIndex) {
         matrix.getValues(mMatrixValues);
         return mMatrixValues[valueIndex];
     }
 
-    public ExifInfo getExifInfo() {
+    ExifInfo getExifInfo() {
         return mExifInfo;
     }
 
-    public void setExifInfo(ExifInfo exifInfo) {
+    void setExifInfo(ExifInfo exifInfo) {
         mExifInfo = exifInfo;
     }
 }
