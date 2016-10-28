@@ -232,14 +232,13 @@ public class PixelCropView extends View {
                     mDownCenterPoint = mCropWrapper.getMappedCenterPoint();
                 }
 
+                mPreZoom = mCropWrapper.getCurrentScale();
 
                 break;
 
             case MotionEvent.ACTION_POINTER_DOWN:
                 mOldDistance = calculateDistance(event);
                 mScalePoint = calculateMidPoint(event);
-
-                mPreZoom = mCropWrapper.getScaleFactor();
 
                 if (event.getPointerCount() == 2 && !mIsRotateState) {
                     mCurrentMode = ActionMode.ZOOM;
@@ -266,7 +265,7 @@ public class PixelCropView extends View {
 
             case MotionEvent.ACTION_POINTER_UP:
                 mCurrentMode = ActionMode.NONE;
-                float currentZoom = mCropWrapper.getScaleFactor();
+                float currentZoom = mCropWrapper.getCurrentScale();
 
                 mPreSizeMatrix.postScale(currentZoom / mPreZoom, currentZoom / mPreZoom,
                         mCropBorder.centerX(), mCropBorder.centerY());
@@ -330,8 +329,8 @@ public class PixelCropView extends View {
             float scale = newDistance / mOldDistance;
 
             if (mPreZoom * scale <= mMinScale) {
-                postScale(mMinScale / mCropWrapper.getScaleFactor(),
-                        mMinScale / mCropWrapper.getScaleFactor(),
+                postScale(mMinScale / mCropWrapper.getCurrentScale(),
+                        mMinScale / mCropWrapper.getCurrentScale(),
                         mScalePoint.x,
                         mScalePoint.y,
                         null);
@@ -405,7 +404,7 @@ public class PixelCropView extends View {
         }
 
         letImageContainsBorder(0, 0, null);
-        mMinScale = CropUtil.calculateMinScale(mCropWrapper, mCropBorder, degrees);
+        calculateMinScale();
 
     }
 
@@ -424,8 +423,7 @@ public class PixelCropView extends View {
                     mCropBorder.centerY(),
                     mPreSizeMatrix);
 
-
-            float tempScale = CropUtil.calculateRotateScale(mCropBorder.width(), mCropBorder.height(), degrees);
+            float tempScale = CropUtil.calculateRotateScale(mCropWrapper, mCropBorder, degrees);
 
             postScale(tempScale,
                     tempScale,

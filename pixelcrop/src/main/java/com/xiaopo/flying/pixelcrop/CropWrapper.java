@@ -148,16 +148,16 @@ class CropWrapper {
         mOutputPath = outputPath;
     }
 
-    /**
-     * This is not real scale
-     */
-    float getScaleFactor() {
-        if (getWidth() >= getHeight()) {
-            return getMappedWidth() / getWidth();
-        } else {
-            return getMappedHeight() / getHeight();
-        }
-    }
+//    /**
+//     * This is not real scale
+//     */
+//    float getScaleFactor() {
+//        if (getWidth() >= getHeight()) {
+//            return getMappedWidth() / getWidth();
+//        } else {
+//            return getMappedHeight() / getHeight();
+//        }
+//    }
 
     /**
      * @return - current image scale value.

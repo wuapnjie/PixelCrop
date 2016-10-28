@@ -6,48 +6,31 @@ import android.graphics.RectF;
 
 import java.util.Arrays;
 
-import static java.lang.Math.abs;
-import static java.lang.Math.atan;
-import static java.lang.Math.cos;
-import static java.lang.Math.pow;
 import static java.lang.Math.round;
-import static java.lang.Math.sin;
-import static java.lang.Math.sqrt;
-import static java.lang.Math.toRadians;
 
 /**
  * The utility class in Crop
  * Created by snowbean on 16-10-15.
  */
 class CropUtil {
+    private static final String TAG = "CropUtil";
     private static Matrix sTempMatrix = new Matrix();
 
-    //计算不同旋转角度下的最小缩放值
+    //TODO 计算不同旋转角度下的最小缩放值
     static float calculateMinScale(CropWrapper cropWrapper, Border cropBorder, int degrees) {
         if (cropWrapper != null && cropBorder != null) {
 
-            float borderWidth = cropBorder.width();
-            float borderHeight = cropBorder.height();
+            sTempMatrix.reset();
+            sTempMatrix.setRotate(-cropWrapper.getCurrentAngle());
 
-            double mDiagonal = sqrt(pow(borderWidth, 2) + pow(borderHeight, 2));
+            float[] unrotatedCropBoundsCorners = getCornersFromRect(cropBorder.getRect());
 
-            if (borderWidth > borderHeight) {
-                double tempAlpha = atan(borderHeight / borderWidth);
-                double tempScale = (float) (mDiagonal * sin(toRadians(abs(degrees)) + tempAlpha) / borderHeight);
-                double hh = tempScale * borderHeight;
-                double ww = tempScale * borderWidth;
-                double temp = (hh * sin(toRadians(abs(degrees))) + ww * cos(toRadians(abs(degrees))));
+            sTempMatrix.mapPoints(unrotatedCropBoundsCorners);
 
-                return (float) (temp / cropWrapper.getWidth());
-            } else {
-                double tempAlpha = atan(borderWidth / borderHeight);
-                double tempScale = (float) (mDiagonal * sin(toRadians(abs(degrees)) + tempAlpha) / borderWidth);
-                double hh = tempScale * borderHeight;
-                double ww = tempScale * borderWidth;
-                double temp = (ww * sin(toRadians(abs(degrees))) + hh * cos(toRadians(abs(degrees))));
+            RectF unrotatedCropRect = CropUtil.trapToRect(unrotatedCropBoundsCorners);
 
-                return (float) (temp / cropWrapper.getHeight());
-            }
+            return Math.max(unrotatedCropRect.width() / cropWrapper.getWidth(),
+                    unrotatedCropRect.height() / cropWrapper.getHeight());
 
         }
 
@@ -55,17 +38,18 @@ class CropUtil {
     }
 
     //计算旋转缩放值
-    static float calculateRotateScale(float borderWidth, float borderHeight, float degrees) {
+    static float calculateRotateScale(CropWrapper cropWrapper, Border cropBorder, float degrees) {
+        sTempMatrix.reset();
+        sTempMatrix.setRotate(-cropWrapper.getCurrentAngle());
 
-        double mDiagonal = sqrt(pow(borderWidth, 2) + pow(borderHeight, 2));
+        float[] unrotatedCropBoundsCorners = getCornersFromRect(cropBorder.getRect());
 
-        if (borderWidth > borderHeight) {
-            double tempAlpha = atan(borderHeight / borderWidth);
-            return (float) (mDiagonal * sin(toRadians(abs(degrees)) + tempAlpha) / borderHeight);
-        } else {
-            double tempAlpha = atan(borderWidth / borderHeight);
-            return (float) (mDiagonal * sin(toRadians(abs(degrees)) + tempAlpha) / borderWidth);
-        }
+        sTempMatrix.mapPoints(unrotatedCropBoundsCorners);
+
+        RectF unrotatedCropRect = CropUtil.trapToRect(unrotatedCropBoundsCorners);
+
+        return Math.max(unrotatedCropRect.width() / cropBorder.width(),
+                unrotatedCropRect.height() / cropBorder.height());
     }
 
 
